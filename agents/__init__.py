@@ -21,3 +21,10 @@ register(
     max_episode_steps=1000,
     reward_threshold=5.0,
 )
+
+register(
+    id='RexTrotting-v0',
+    entry_point='envs.rex_trotting_env:RexTrottingEnv',
+    max_episode_steps=1000,
+    reward_threshold=5.0,
+)

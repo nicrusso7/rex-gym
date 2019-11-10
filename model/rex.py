@@ -10,7 +10,7 @@ import numpy as np
 from . import motor
 from util import pybullet_data
 
-INIT_POSITION = [0, 0, .22]
+INIT_POSITION = [0, 0, .23]
 INIT_RACK_POSITION = [0, 0, 1]
 INIT_ORIENTATION = [0, 0, 0, 1]
 OVERHEAT_SHUTDOWN_TORQUE = 2.45
@@ -378,11 +378,11 @@ class Rex(object):
         self._pybullet_client.resetJointState(self.quadruped,
                                               self._joint_name_to_id["motor_" + leg_position +
                                                                      "_leg"],
-                                              self._motor_direction[2 * leg_id] * (-pi / 5),
+                                              self._motor_direction[2 * leg_id] * (-0.628319),
                                               targetVelocity=0)
         self._pybullet_client.resetJointState(self.quadruped,
                                               self._joint_name_to_id["foot_motor_" + leg_position],
-                                              self._motor_direction[2 * leg_id] * (pi / 3),
+                                              self._motor_direction[2 * leg_id] * (1.0472),
                                               targetVelocity=0)
 
         if add_constraint:

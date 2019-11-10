@@ -13,8 +13,8 @@ from agents.ppo import simple_ppo_agent
 
 flags = tf.app.flags
 FLAGS = tf.app.flags.FLAGS
-LOG_DIR = "~/rex-gym/policies/bounding/20191026T005039-rex_reactive"
-CHECKPOINT = "model.ckpt-12500012"
+LOG_DIR = "policies/galloping/bounded-rex_reactive"
+CHECKPOINT = "model.ckpt-14000000"
 
 """
 Replace the policy config.yml "env" field with this:

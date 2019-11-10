@@ -8,9 +8,12 @@ import numpy as np
 
 from .gym import rex_gym_env
 
+# Radians
 INIT_SHOULDER_POS = 0.0
-INIT_LEG_POS = -math.pi / 5
-INIT_FOOT_POS = math.pi / 3
+# -math.pi / 5
+INIT_LEG_POS = -0.628319
+# math.pi / 3
+INIT_FOOT_POS = 1.0472
 NUM_LEGS = 4
 NUM_MOTORS = 3 * NUM_LEGS
 
@@ -108,31 +111,43 @@ class RexReactiveEnv(rex_gym_env.RexGymEnv):
                              action_repeat=action_repeat)
 
         action_dim = 12
-        action_low = np.array([-0.5] * action_dim)
+        action_low = np.array([-0.6] * action_dim)
         action_high = -action_low
         self.action_space = spaces.Box(action_low, action_high)
         self._cam_dist = 1.0
         self._cam_yaw = 30
         self._cam_pitch = -30
+        self.init_leg = INIT_LEG_POS
+        self.init_foot = INIT_FOOT_POS
 
     def reset(self):
         super(RexReactiveEnv, self).reset(initial_motor_angles=None,
                                           reset_duration=0.5)
         return self._get_observation()
 
-    @staticmethod
-    def _convert_from_leg_model(leg_pose):
+    def _convert_from_leg_model(self, leg_pose):
         motor_pose = np.zeros(NUM_MOTORS)
         for i in range(NUM_LEGS):
             # print("POSE " + str(i))
             motor_pose[int(3 * i)] = 0
-            if i == 0 or i == 1:
-                motor_pose[int(3 * i + 1)] = (leg_pose[int(3 * i + 1)] - leg_pose[int(3 * i)])
-                motor_pose[int(3 * i + 2)] = (leg_pose[int(3 * i + 2)] + leg_pose[int(3 * i)])
-            else:
-                motor_pose[int(3 * i + 1)] = (leg_pose[int(3 * i + 1)] + leg_pose[int(3 * i)])
-                motor_pose[int(3 * i + 2)] = (leg_pose[int(3 * i + 2)] - leg_pose[int(3 * i)])
+            leg_action = self.init_leg + leg_pose[int(3 * i)]
+            motor_pose[int(3 * i + 1)] = max(min(leg_action, self.init_leg + 0.45), self.init_leg - 0.78)
+            foot_pose = self.init_foot + leg_pose[int(3 * i)]
+            motor_pose[int(3 * i + 2)] = max(min(foot_pose, self.init_foot + 0.63), self.init_foot - 0.63)
+
+            # if i == 0 or i == 1:
+            #     motor_pose[int(3 * i + 1)] = (leg_pose[int(3 * i + 1)] - leg_pose[int(3 * i)])
+            #     motor_pose[int(3 * i + 2)] = (leg_pose[int(3 * i + 2)] - leg_pose[int(3 * i)])
+            # else:
+            #     motor_pose[int(3 * i + 1)] = (leg_pose[int(3 * i + 1)] - leg_pose[int(3 * i)])
+            #     motor_pose[int(3 * i + 2)] = (leg_pose[int(3 * i + 2)] - leg_pose[int(3 * i)])
             # print(motor_pose)
+            if motor_pose[int(3 * i + 1)] > self.init_leg + 0.45 or motor_pose[int(3 * i + 1)] < self.init_leg - 0.78:
+                print("Leg action out of the bound!")
+                print(motor_pose[int(3 * i + 1)])
+            if motor_pose[int(3 * i + 2)] > self.init_foot + 0.63 or motor_pose[int(3 * i + 2)] < self.init_foot - 0.63:
+                print("Foot action out of the bound!")
+                print(motor_pose[int(3 * i + 2)])
         return motor_pose
 
     @staticmethod
@@ -160,7 +175,7 @@ class RexReactiveEnv(rex_gym_env.RexGymEnv):
       Boolean value that indicates whether Rex has fallen.
     """
         roll, pitch, _ = self.rex.GetTrueBaseRollPitchYaw()
-        return math.fabs(roll) > 0.3 or math.fabs(pitch) > 0.4
+        return math.fabs(roll) > 0.3 or math.fabs(pitch) > 0.5
 
     def _get_true_observation(self):
         """Get the true observations of this environment.
