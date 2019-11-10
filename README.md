@@ -24,6 +24,8 @@ To start a pre-trained agent, run from the root of the project:
 ```
 python playground/rex_reactive_env_play.py
 ```
+There are also videos under `policies/galloping/videos`
+
 ## Start a new training simulation
 To start a new training session, run from the root of the project:
 
