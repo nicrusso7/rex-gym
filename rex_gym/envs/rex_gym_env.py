@@ -158,7 +158,7 @@ class RexGymEnv(gym.Env):
                 self._time_step = 0.01
                 self._action_repeat = 1
             self.control_time_step = self._time_step * self._action_repeat
-        # TODO(b/73829334): Fix the value of self._num_bullet_solver_iterations.
+        # TODO: Fix the value of self._num_bullet_solver_iterations.
         self._num_bullet_solver_iterations = int(NUM_SIMULATION_ITERATION_STEPS / self._action_repeat)
         self._urdf_root = urdf_root
         self._self_collision_enabled = self_collision_enabled
@@ -343,7 +343,6 @@ class RexGymEnv(gym.Env):
         #                                      self._env_step_counter)
         self._env_step_counter += 1
         if done:
-            print("DONE!!!!!!!!!!!!!!!!")
             self.rex.Terminate()
         return np.array(self._get_observation()), reward, done, {}
 
@@ -433,9 +432,12 @@ class RexGymEnv(gym.Env):
         # print(position)
         if self.is_fallen():
             print("IS FALLEN!")
+        o = self.rex.GetBaseOrientation()
+        if o[1] < -0.13:
+            print("IS ROTATING!")
         if position[2] <= 0.12:
             print("LOW POSITION")
-        return self.is_fallen() or distance > self._distance_limit or position[2] <= 0.12
+        return self.is_fallen() or position[2] <= 0.12 or o[1] < -0.13
 
     def _reward(self):
         current_base_position = self.rex.GetBasePosition()
@@ -456,12 +458,12 @@ class RexGymEnv(gym.Env):
         energy_reward = -np.abs(
             np.dot(self.rex.GetMotorTorques(),
                    self.rex.GetMotorVelocities())) * self._time_step
-        objectives = [
-            # target_reward,
-            forward_reward, energy_reward, drift_reward, shake_reward]
+        objectives = [forward_reward, energy_reward, drift_reward, shake_reward]
         weighted_objectives = [o * w for o, w in zip(objectives, self._objective_weights)]
         reward = sum(weighted_objectives)
         self._objectives.append(objectives)
+        # print("REWARD:")
+        # print(forward_reward)
         return reward
 
     def get_objectives(self):

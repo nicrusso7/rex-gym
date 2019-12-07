@@ -382,7 +382,7 @@ class Rex(object):
                                               targetVelocity=0)
         self._pybullet_client.resetJointState(self.quadruped,
                                               self._joint_name_to_id["foot_motor_" + leg_position],
-                                              self._motor_direction[2 * leg_id] * (1.0472),
+                                              self._motor_direction[2 * leg_id] * 1.0472,
                                               targetVelocity=0)
 
         if add_constraint:

@@ -1,0 +1,6 @@
+model_checkpoint_path: "/Users/seven/Desktop/test_clone/20191203T154619-rex_reactive/model.ckpt-20000000"
+all_model_checkpoint_paths: "/Users/seven/Desktop/test_clone/20191203T154619-rex_reactive/model.ckpt-18000000"
+all_model_checkpoint_paths: "/Users/seven/Desktop/test_clone/20191203T154619-rex_reactive/model.ckpt-18500000"
+all_model_checkpoint_paths: "/Users/seven/Desktop/test_clone/20191203T154619-rex_reactive/model.ckpt-19000000"
+all_model_checkpoint_paths: "/Users/seven/Desktop/test_clone/20191203T154619-rex_reactive/model.ckpt-19500000"
+all_model_checkpoint_paths: "/Users/seven/Desktop/test_clone/20191203T154619-rex_reactive/model.ckpt-20000000"

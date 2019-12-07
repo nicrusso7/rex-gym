@@ -11,8 +11,8 @@ gym_dir_path = os.path.join(str(site.getsitepackages()[0]), 'rex_gym')
 
 flags = tf.app.flags
 FLAGS = tf.app.flags.FLAGS
-LOG_DIR = os.path.join(gym_dir_path, 'policies/20191118T152201-rex_reactive')
-CHECKPOINT = "model.ckpt-14000000"
+LOG_DIR = os.path.join(gym_dir_path, 'policies/galloping/balanced')
+CHECKPOINT = "model.ckpt-20000000"
 
 """
 Replace the policy config.yml "env" field with this:
@@ -57,10 +57,11 @@ def main(argv):
         observation = env.reset()
         while True:
             action = agent.get_action([observation])
+            print(action)
             observation, reward, done, _ = env.step(action[0])
             time.sleep(0.002)
             sum_reward += reward
-            print(sum_reward)
+            # print(sum_reward)
             if done:
                 break
         tf.logging.info("reward: %s", sum_reward)

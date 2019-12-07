@@ -12,13 +12,13 @@ from ..agents.ppo import simple_ppo_agent
 
 flags = tf.app.flags
 FLAGS = tf.app.flags.FLAGS
-LOG_DIR = "/Users/seven/dev/test/trotting/new_pos/20191111T142659-rex_trotting"
-CHECKPOINT = "model.ckpt-2000012"
+LOG_DIR = "/Users/seven/Desktop/test_clone/20191203T133419-rex_trotting"
+CHECKPOINT = "model.ckpt-500000"
 
 """
   env: !!python/object/apply:functools.partial
     args:
-    - &id001 !!python/name:envs.rex_trotting_env.RexTrottingEnv ''
+    - &id001 !!python/name:rex_gym.envs.gym.rex_trotting_env.RexTrottingEnv ''
     state: !!python/tuple
     - *id001
     - !!python/tuple []

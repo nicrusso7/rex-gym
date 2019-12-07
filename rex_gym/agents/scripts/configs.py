@@ -25,7 +25,7 @@ def default():
     """Default configuration for PPO."""
     # General
     algorithm = ppo.PPOAlgorithm
-    num_agents = 14
+    num_agents = 20
     eval_episodes = 25
     use_gpu = False
     # Network
@@ -60,6 +60,7 @@ def rex_reactive():
     max_length = 1000
     steps = 7e6  # 7M
     return locals()
+
 
 def rex_trotting():
     """Configuration for Rex galloping task."""

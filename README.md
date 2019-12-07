@@ -29,7 +29,7 @@ pip install .
 To start a pre-trained agent:
 
 ```
-python rex_gym.playground.rex_reactive_env_play
+python -m rex_gym.playground.rex_reactive_env_play
 ```
 There are also videos under `/videos`.
 
@@ -51,9 +51,9 @@ def default():
     """Default configuration for PPO."""
     # General
     ...
-    num_agents = 14
+    num_agents = 20
 ```
-Install rex_gym from source. This configuration will launch 14 agents (threads) in parallel to train your model.
+Install rex_gym from source. This configuration will launch 20 agents (threads) in parallel to train your model.
 
 # Robot platform
 The robot used for this experiment is the [Spotmicro](https://www.thingiverse.com/thing:3445283) made by [Deok-yeon Kim](https://www.thingiverse.com/KDY0523/about).
@@ -107,6 +107,7 @@ I've ran a first simulation (~6M steps), the output `control policy` is in `/pol
 
 The emerged galloping gait shows the robot body tilled up and some unusual positions/movements (especially starting from the initial pose). The `leg model` needs improvements. 
 The policy video is `policies/galloping/videos/rex-no-bounds.mp4`
+
 #### Galloping gait - bounded feedback
 To improve the gait, in this second simulation, I've worked on the `leg model`.
 
@@ -118,6 +119,16 @@ I've ran the simulation (7M steps), the output `control policy` is in `/policies
 ![](rex_gym/util/images/galloping.gif)
 
 The emerged gait looks more clear. The policy video is `policies/galloping/videos/rex-galloping.mp4`
+#### Galloping gait - balanced feedback
+Another test was made using a `balanced` feedback:
+
+![](rex_gym/util/images/leg_model_improved.png) 
+
+With an Action Space dimension equals to 4, assigning the same angle to both the front legs and a different one to the rear ones.
+The very same was done for the foot angles. 
+
+The simulation score is massively improved (about 10x) as the learning time while the emerged gait is very similar to the `bounded feedback` model. 
+The Tensorflow score with this model, after ~500k attemps, is the same after ~4M attempts using any other models.
 
 # Credits
 [Sim-to-Real: Learning Agile Locomotion For Quadruped Robots](https://arxiv.org/pdf/1804.10332.pdf) and all the related papers. Google Brain, Google X, Google DeepMind - Minitaur Ghost Robotics.

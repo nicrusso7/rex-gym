@@ -110,7 +110,7 @@ class RexReactiveEnv(rex_gym_env.RexGymEnv):
                              control_time_step=control_time_step,
                              action_repeat=action_repeat)
 
-        action_dim = 12
+        action_dim = 4
         action_low = np.array([-0.6] * action_dim)
         action_high = -action_low
         self.action_space = spaces.Box(action_low, action_high)
@@ -128,33 +128,46 @@ class RexReactiveEnv(rex_gym_env.RexGymEnv):
     def _convert_from_leg_model(self, leg_pose):
         motor_pose = np.zeros(NUM_MOTORS)
         for i in range(NUM_LEGS):
-            # print("POSE " + str(i))
+            # Improved model v2: makes the learning process more efficient.
             motor_pose[int(3 * i)] = 0
-            leg_action = self.init_leg + leg_pose[int(3 * i)]
-            motor_pose[int(3 * i + 1)] = max(min(leg_action, self.init_leg + 0.45), self.init_leg - 0.78)
-            foot_pose = self.init_foot + leg_pose[int(3 * i)]
-            motor_pose[int(3 * i + 2)] = max(min(foot_pose, self.init_foot + 0.63), self.init_foot - 0.63)
-            # if motor_pose[int(3 * i + 1)] > self.init_leg + 0.7 or motor_pose[int(3 * i + 1)] < self.init_leg - 0.7:
-            #     print("Leg action out of the bound!")
-            #     print(motor_pose[int(3 * i + 1)])
-            # if motor_pose[int(3 * i + 2)] > self.init_foot + 0.63 or motor_pose[int(3 * i + 2)] < self.init_foot - 0.63:
-            #     print("Foot action out of the bound!")
-            #     print(motor_pose[int(3 * i + 2)])
+            if i == 0 or i == 1:
+                leg_action = self.init_leg + leg_pose[0]
+                motor_pose[int(3 * i + 1)] = max(min(leg_action, self.init_leg + 0.60), self.init_leg - 0.60)
+                foot_pose = self.init_foot + leg_pose[1]
+                motor_pose[int(3 * i + 2)] = max(min(foot_pose, self.init_foot + 0.60), self.init_foot - 0.60)
+            else:
+                leg_action = self.init_leg + leg_pose[2]
+                motor_pose[int(3 * i + 1)] = max(min(leg_action, self.init_leg + 0.60), self.init_leg - 0.60)
+                foot_pose = self.init_foot + leg_pose[3]
+                motor_pose[int(3 * i + 2)] = max(min(foot_pose, self.init_foot + 0.60), self.init_foot - 0.60)
+            # print(f"Leg {i}: {motor_pose[int(3 * i + 1)]}")
+            # print(f"Foot {i}: {motor_pose[int(3 * i + 2)]}")
+
         return motor_pose
 
-    @staticmethod
-    def _signal(t):
-        initial_pose = np.array([
-            INIT_SHOULDER_POS, INIT_LEG_POS, INIT_FOOT_POS,
-            INIT_SHOULDER_POS, INIT_LEG_POS, INIT_FOOT_POS,
-            INIT_SHOULDER_POS, INIT_LEG_POS, INIT_FOOT_POS,
-            INIT_SHOULDER_POS, INIT_LEG_POS, INIT_FOOT_POS
-        ])
-        return initial_pose
+    # @staticmethod
+    # def _signal(t):
+    #     initial_pose = np.array([
+    #         INIT_SHOULDER_POS, INIT_LEG_POS, INIT_FOOT_POS,
+    #         INIT_SHOULDER_POS, INIT_LEG_POS, INIT_FOOT_POS,
+    #         INIT_SHOULDER_POS, INIT_LEG_POS, INIT_FOOT_POS,
+    #         INIT_SHOULDER_POS, INIT_LEG_POS, INIT_FOOT_POS
+    #     ])
+    #     return initial_pose
+
+    # REX_LEG_MODELS = [
+    #   JUMP  ------>
+    #   motor_pose[int(3 * i)] = 0
+    #   leg_action = self.init_leg + leg_pose[int(3 * i)]
+    #   motor_pose[int(3 * i + 1)] = max(min(leg_action, self.init_leg + 0.45), self.init_leg - 0.78)
+    #   foot_pose = self.init_foot + leg_pose[int(3 * i)]
+    #   motor_pose[int(3 * i + 2)] = max(min(foot_pose, self.init_foot + 0.63), self.init_foot - 0.63)
+    #   -----------------------------------------------------------------------------------------------
+    # ]
 
     def _transform_action_to_motor_command(self, action):
         # Add the reference trajectory.
-        action += self._signal(self.rex.GetTimeSinceReset())
+        # action += self._signal(self.rex.GetTimeSinceReset())
         return self._convert_from_leg_model(action)
 
     def is_fallen(self):
