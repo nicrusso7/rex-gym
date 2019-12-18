@@ -30,7 +30,7 @@ setup(
         'numpy',
         'pybullet',
         'gym',
-        'tensorflow==1.13.1',
+        'tensorflow==1.15.0',
         'ruamel.yaml'
     ],
     package_data={
