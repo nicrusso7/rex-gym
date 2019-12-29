@@ -1,0 +1,6 @@
+model_checkpoint_path: "/Users/seven/dev/test/walk/20191228T170451-rex_walking/model.ckpt-4000000"
+all_model_checkpoint_paths: "/Users/seven/dev/test/walk/20191228T170451-rex_walking/model.ckpt-2000000"
+all_model_checkpoint_paths: "/Users/seven/dev/test/walk/20191228T170451-rex_walking/model.ckpt-2500000"
+all_model_checkpoint_paths: "/Users/seven/dev/test/walk/20191228T170451-rex_walking/model.ckpt-3000000"
+all_model_checkpoint_paths: "/Users/seven/dev/test/walk/20191228T170451-rex_walking/model.ckpt-3500000"
+all_model_checkpoint_paths: "/Users/seven/dev/test/walk/20191228T170451-rex_walking/model.ckpt-4000000"

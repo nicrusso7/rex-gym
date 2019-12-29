@@ -17,7 +17,7 @@ def copy_assets(dir_path):
 
 setup(
     name='rex_gym',
-    version='0.1.6',
+    version='0.1.7',
     license='Apache 2.0',
     packages=find_packages(),
     author='Nicola Russo',
@@ -25,7 +25,7 @@ setup(
     long_description=long_description,
     long_description_content_type='text/markdown',
     url='https://github.com/nicrusso7/rex-gym',
-    download_url='https://github.com/nicrusso7/rex-gym/archive/v_015.tar.gz',
+    download_url='https://github.com/nicrusso7/rex-gym/archive/master.zip',
     install_requires=[
         'numpy',
         'pybullet',

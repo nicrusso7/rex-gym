@@ -62,11 +62,11 @@ def rex_reactive():
     return locals()
 
 
-def rex_trotting():
-    """Configuration for Rex galloping task."""
+def rex_walking():
+    """Configuration for Rex walking task."""
     locals().update(default())
     # Environment
-    env = 'RexTrotting-v0'
+    env = 'RexWalk-v0'
     max_length = 1000
-    steps = 7e6  # 7M
+    steps = 3e6  # 7M
     return locals()

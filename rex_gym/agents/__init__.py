@@ -22,8 +22,8 @@ register(
 )
 
 register(
-    id='RexTrotting-v0',
-    entry_point='rex_gym.envs.gym.rex_trotting_env:RexTrottingEnv',
+    id='RexWalk-v0',
+    entry_point='rex_gym.envs.gym.rex_alternating_legs_env:RexAlternatingLegsEnv',
     max_episode_steps=1000,
     reward_threshold=5.0,
 )
