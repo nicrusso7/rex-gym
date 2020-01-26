@@ -1,0 +1,6 @@
+model_checkpoint_path: "/home/seven/dev/test/turn/20200125T225412-rex_turn/model.ckpt-16000000"
+all_model_checkpoint_paths: "/home/seven/dev/test/turn/20200125T225412-rex_turn/model.ckpt-14000000"
+all_model_checkpoint_paths: "/home/seven/dev/test/turn/20200125T225412-rex_turn/model.ckpt-14500000"
+all_model_checkpoint_paths: "/home/seven/dev/test/turn/20200125T225412-rex_turn/model.ckpt-15000000"
+all_model_checkpoint_paths: "/home/seven/dev/test/turn/20200125T225412-rex_turn/model.ckpt-15500000"
+all_model_checkpoint_paths: "/home/seven/dev/test/turn/20200125T225412-rex_turn/model.ckpt-16000000"

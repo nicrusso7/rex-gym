@@ -10,12 +10,14 @@ import numpy as np
 from . import motor
 from ..util import pybullet_data
 
-INIT_POSITION = [0, 0, .23]
+INIT_POSITION = [0, 0, 0.21]
 INIT_RACK_POSITION = [0, 0, 1]
 INIT_ORIENTATION = [0, 0, 0, 1]
 OVERHEAT_SHUTDOWN_TORQUE = 2.45
 OVERHEAT_SHUTDOWN_TIME = 1.0
-LEG_POSITION = ["front_left", "rear_left", "front_right", "rear_right"]
+
+
+LEG_POSITION = ["front_left", "front_right", "rear_left", "rear_right"]
 MOTOR_NAMES = [
     "motor_front_left_shoulder", "motor_front_left_leg", "foot_motor_front_left",
     "motor_front_right_shoulder", "motor_front_right_leg", "foot_motor_front_right",
@@ -51,6 +53,26 @@ class Rex(object):
     """The Rex class that simulates a quadruped robot.
 
   """
+    INIT_POSES = {
+        'stand_low': np.array([
+            0.1, -0.82, 1.35,
+            -0.1, -0.82, 1.35,
+            0.1, -0.87, 1.35,
+            -0.1, -0.87, 1.35
+        ]),
+        'stand_high': np.array([
+            0, -0.658319, 1.0472,
+            0, -0.658319, 1.0472,
+            0, -0.658319, 1.0472,
+            0, -0.658319, 1.0472
+        ]),
+        'rest_position': np.array([
+            -0.4, -1.5, 6,
+            0.4, -1.5, 6,
+            -0.4, -1.5, 6,
+            0.4, -1.5, 6
+        ])
+    }
 
     def __init__(self,
                  pybullet_client,
@@ -69,7 +91,8 @@ class Rex(object):
                  observation_noise_stdev=SENSOR_NOISE_STDDEV,
                  torque_control_enabled=False,
                  motor_overheat_protection=False,
-                 on_rack=False):
+                 on_rack=False,
+                 pose_id='stand_low'):
         """Constructs a Rex and reset it to the initial states.
 
     Args:
@@ -131,6 +154,7 @@ class Rex(object):
         self._torque_control_enabled = torque_control_enabled
         self._motor_overheat_protection = motor_overheat_protection
         self._on_rack = on_rack
+        self._pose_id = pose_id
         if self._accurate_motor_model_enabled:
             self._kp = motor_kp
             self._kd = motor_kd
@@ -147,7 +171,10 @@ class Rex(object):
         self._step_counter = 0
         # reset_time=-1.0 means skipping the reset motion.
         # See Reset for more details.
-        self.Reset(reset_time=-1.0)
+        self.Reset(reset_time=-1)
+        self.init_on_rack_position = INIT_RACK_POSITION
+        self.init_position = INIT_POSITION
+        self.initial_pose = self.INIT_POSES[pose_id]
 
     def GetTimeSinceReset(self):
         return self._step_counter * self.time_step
@@ -268,7 +295,7 @@ class Rex(object):
       reload_urdf: Whether to reload the urdf file. If not, Reset() just place
         the Rex back to its starting position.
       default_motor_angles: The default motor angles. If it is None, Rex
-        will hold a default pose (motor angle math.pi / 2) for 100 steps. In
+        will hold a default pose for 100 steps. In
         torque control mode, the phase of holding the default pose is skipped.
       reset_time: The duration (in seconds) to hold the default motor angles. If
         reset_time <= 0 or in torque control mode, the phase of holding the
@@ -279,23 +306,20 @@ class Rex(object):
             init_position = INIT_RACK_POSITION
         else:
             init_position = INIT_POSITION
+
         if reload_urdf:
             if self._self_collision_enabled:
                 self.quadruped = self._pybullet_client.loadURDF(
                     pybullet_data.getDataPath() + "/assets/urdf/rex.urdf",
-                    # % self._urdf_root,
                     init_position,
                     INIT_ORIENTATION,
                     useFixedBase=self._on_rack,
                     flags=self._pybullet_client.URDF_USE_SELF_COLLISION)
             else:
                 self.quadruped = self._pybullet_client.loadURDF(pybullet_data.getDataPath() + "/assets/urdf/rex.urdf",
-                                                                # %
-                                                                # self._urdf_root,
                                                                 init_position,
                                                                 INIT_ORIENTATION,
                                                                 useFixedBase=self._on_rack)
-            # self._pybullet_client.changeDynamics(self.quadruped, -1, lateralFriction=0.8)
             self._BuildJointNameToIdDict()
             self._BuildUrdfIds()
             if self._remove_default_joint_damping:
@@ -316,20 +340,18 @@ class Rex(object):
 
         # Perform reset motion within reset_duration if in position control mode.
         # Nothing is performed if in torque control mode for now.
-        # TODO(jietan): Add reset motion when the torque control is fully supported.
         self._observation_history.clear()
-        # if not self._torque_control_enabled and reset_time > 0.0:
-        #   self.ReceiveObservation()
-        #   for _ in range(100):
-        #     self.ApplyAction([math.pi / 2] * self.num_motors)
-        #     self._pybullet_client.stepSimulation()
-        #     self.ReceiveObservation()
-        #   if default_motor_angles is not None:
-        #     num_steps_to_reset = int(reset_time / self.time_step)
-        #     for _ in range(num_steps_to_reset):
-        #       self.ApplyAction(default_motor_angles)
-        #       self._pybullet_client.stepSimulation()
-        #       self.ReceiveObservation()
+        if reset_time > 0.0 and default_motor_angles is not None:
+            self.ReceiveObservation()
+            for _ in range(100):
+                self.ApplyAction(self.initial_pose)
+                self._pybullet_client.stepSimulation()
+                self.ReceiveObservation()
+            num_steps_to_reset = int(reset_time / self.time_step)
+            for _ in range(num_steps_to_reset):
+                self.ApplyAction(default_motor_angles)
+                self._pybullet_client.stepSimulation()
+                self.ReceiveObservation()
         self.ReceiveObservation()
 
     def _SetMotorTorqueById(self, motor_id, torque):
@@ -373,26 +395,18 @@ class Rex(object):
         self._pybullet_client.resetJointState(self.quadruped,
                                               self._joint_name_to_id["motor_" + leg_position +
                                                                      "_shoulder"],
-                                              self._motor_direction[2 * leg_id] * 0,
+                                              self.INIT_POSES[self._pose_id][3 * leg_id],
                                               targetVelocity=0)
+
         self._pybullet_client.resetJointState(self.quadruped,
                                               self._joint_name_to_id["motor_" + leg_position +
                                                                      "_leg"],
-                                              self._motor_direction[2 * leg_id] * (-0.628319),
+                                              self.INIT_POSES[self._pose_id][3 * leg_id + 1],
                                               targetVelocity=0)
         self._pybullet_client.resetJointState(self.quadruped,
                                               self._joint_name_to_id["foot_motor_" + leg_position],
-                                              self._motor_direction[2 * leg_id] * 1.0472,
+                                              self.INIT_POSES[self._pose_id][3 * leg_id + 2],
                                               targetVelocity=0)
-
-        if add_constraint:
-            print("Not implemented yet!")
-            # @TODO enable shoulder/leg/foot constraints
-        # self._pybullet_client.createConstraint(
-        #     self.quadruped, self._joint_name_to_id["knee_" + leg_position + "R_link"],
-        #     self.quadruped, self._joint_name_to_id["knee_" + leg_position + "L_link"],
-        #     self._pybullet_client.JOINT_POINT2POINT, [0, 0, 0], KNEE_CONSTRAINT_POINT_RIGHT,
-        #     KNEE_CONSTRAINT_POINT_LEFT)
 
         if self._accurate_motor_model_enabled or self._pd_control_enabled:
             # Disable the default motor in pybullet.
@@ -648,29 +662,29 @@ class Rex(object):
                                                               motor_commands_with_direction):
                 self._SetDesiredMotorAngleById(motor_id, motor_command_with_direction)
 
-    def ConvertFromLegModel(self, actions):
-        """Convert the actions that use leg model to the real motor actions.
-
-    Args:
-      actions: The theta, phi of the leg model.
-    Returns:
-      The eight desired motor angles that can be used in ApplyActions().
-    """
-        motor_angle = copy.deepcopy(actions)
-        scale_for_singularity = 1
-        offset_for_singularity = 1.5
-        half_num_motors = int(self.num_motors / 2)
-        quater_pi = math.pi / 4
-        for i in range(self.num_motors):
-            action_idx = int(i // 2)
-            forward_backward_component = (
-                    -scale_for_singularity * quater_pi *
-                    (actions[action_idx + half_num_motors] + offset_for_singularity))
-            extension_component = (-1) ** i * quater_pi * actions[action_idx]
-            if i >= half_num_motors:
-                extension_component = -extension_component
-            motor_angle[i] = (math.pi + forward_backward_component + extension_component)
-        return motor_angle
+    # def ConvertFromLegModel(self, actions):
+    #     """Convert the actions that use leg model to the real motor actions.
+    #
+    # Args:
+    #   actions: The theta, phi of the leg model.
+    # Returns:
+    #   The eight desired motor angles that can be used in ApplyActions().
+    # """
+    #     motor_angle = copy.deepcopy(actions)
+    #     scale_for_singularity = 1
+    #     offset_for_singularity = 1.5
+    #     half_num_motors = int(self.num_motors / 2)
+    #     quater_pi = math.pi / 4
+    #     for i in range(self.num_motors):
+    #         action_idx = int(i // 2)
+    #         forward_backward_component = (
+    #                 -scale_for_singularity * quater_pi *
+    #                 (actions[action_idx + half_num_motors] + offset_for_singularity))
+    #         extension_component = (-1) ** i * quater_pi * actions[action_idx]
+    #         if i >= half_num_motors:
+    #             extension_component = -extension_component
+    #         motor_angle[i] = (math.pi + forward_backward_component + extension_component)
+    #     return motor_angle
 
     def GetBaseMassesFromURDF(self):
         """Get the mass of the base from the URDF file."""
@@ -707,9 +721,7 @@ class Rex(object):
     def SetLegMasses(self, leg_masses):
         """Set the mass of the legs.
 
-    A leg includes leg_link and motor. 4 legs contain 16 links (4 links each)
-    and 8 motors. First 16 numbers correspond to link masses, last 8 correspond
-    to motor masses (24 total).
+
 
     Args:
       leg_masses: The leg and motor masses for all the leg links and motors.
@@ -752,10 +764,6 @@ class Rex(object):
 
     def SetLegInertias(self, leg_inertias):
         """Set the inertias of the legs.
-
-    A leg includes leg_link and motor. 4 legs contain 16 links (4 links each)
-    and 8 motors. First 16 numbers correspond to link inertia, last 8 correspond
-    to motor inertia (24 total).
 
     Args:
       leg_inertias: The leg and motor inertias for all the leg links and motors.

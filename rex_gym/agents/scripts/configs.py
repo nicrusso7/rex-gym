@@ -25,7 +25,7 @@ def default():
     """Default configuration for PPO."""
     # General
     algorithm = ppo.PPOAlgorithm
-    num_agents = 20
+    num_agents = 25
     eval_episodes = 25
     use_gpu = False
     # Network
@@ -52,21 +52,41 @@ def default():
     return locals()
 
 
-def rex_reactive():
+def rex_galloping():
     """Configuration for Rex galloping task."""
     locals().update(default())
     # Environment
-    env = 'Rex-v0'
+    env = 'RexGalloping-v0'
     max_length = 1000
-    steps = 7e6  # 7M
+    steps = 8e6  # 8M
     return locals()
 
 
-def rex_walking():
+def rex_walk():
     """Configuration for Rex walking task."""
     locals().update(default())
     # Environment
     env = 'RexWalk-v0'
     max_length = 1000
-    steps = 3e6  # 7M
+    steps = 8e6  # 8M
+    return locals()
+
+
+def rex_turn():
+    """Configuration for Rex turn task."""
+    locals().update(default())
+    # Environment
+    env = 'RexTurn-v0'
+    max_length = 1000
+    steps = 8e6  # 8M
+    return locals()
+
+
+def rex_standup():
+    """Configuration for Rex standup task."""
+    locals().update(default())
+    # Environment
+    env = 'RexStandup-v0'
+    max_length = 1000
+    steps = 5e6  # 5M
     return locals()

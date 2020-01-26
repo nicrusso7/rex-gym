@@ -1,5 +1,5 @@
 /venv/
 /.idea/
 *.egg-info
-/dist/*
+*.DS_Store
 /dist

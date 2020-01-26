@@ -4,7 +4,7 @@ dictitems:
   discount: 0.985
   env: !!python/object/apply:functools.partial
     args:
-    - &id001 !!python/name:rex_gym.envs.gym.rex_reactive_env.RexReactiveEnv ''
+    - &id001 !!python/name:rex_gym.envs.gym.galloping_env.RexReactiveEnv ''
     state: !!python/tuple
     - *id001
     - !!python/tuple []

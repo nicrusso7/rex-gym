@@ -2,6 +2,7 @@ from rex_gym.agents import scripts, tools, ppo
 import gym
 from gym.envs.registration import registry
 
+
 def register(id, *args, **kvargs):
     if id in registry.env_specs:
         return
@@ -15,15 +16,29 @@ def getList():
 
 
 register(
-    id='Rex-v0',
-    entry_point='rex_gym.envs.gym.rex_reactive_env:RexReactiveEnv',
+    id='RexGalloping-v0',
+    entry_point='rex_gym.envs.gym.galloping_env:RexReactiveEnv',
     max_episode_steps=1000,
     reward_threshold=5.0,
 )
 
 register(
     id='RexWalk-v0',
-    entry_point='rex_gym.envs.gym.rex_alternating_legs_env:RexAlternatingLegsEnv',
+    entry_point='rex_gym.envs.gym.walk_env:RexWalkEnv',
     max_episode_steps=1000,
+    reward_threshold=5.0,
+)
+
+register(
+    id='RexTurn-v0',
+    entry_point='rex_gym.envs.gym.turn_env:RexTurnEnv',
+    max_episode_steps=1000,
+    reward_threshold=5.0,
+)
+
+register(
+    id='RexStandup-v0',
+    entry_point='rex_gym.envs.gym.standup_env:RexStandupEnv',
+    max_episode_steps=400,
     reward_threshold=5.0,
 )

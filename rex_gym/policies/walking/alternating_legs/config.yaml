@@ -4,7 +4,7 @@ dictitems:
   discount: 0.985
   env: !!python/object/apply:functools.partial
     args:
-    - &id001 !!python/name:rex_gym.envs.gym.rex_alternating_legs_env.RexAlternatingLegsEnv ''
+    - &id001 !!python/name:rex_gym.envs.gym.walk_env.RexWalkEnv ''
     state: !!python/tuple
     - *id001
     - !!python/tuple []
@@ -18,16 +18,16 @@ dictitems:
   kl_cutoff_factor: 2
   kl_init_penalty: 1
   kl_target: 0.01
-  logdir: /Users/seven/dev/test/walk/20191228T170451-rex_walking
+  logdir: /home/seven/dev/test/walk/20200124T102416-rex_walk
   max_length: 1000
   network: !!python/name:rex_gym.agents.scripts.networks.ForwardGaussianPolicy ''
-  num_agents: 20
+  num_agents: 25
   policy_layers: &id001 !!python/tuple
   - 200
   - 100
   policy_lr: 0.0001
   policy_optimizer: AdamOptimizer
-  steps: 7000000.0
+  steps: 8000000.0
   update_epochs_policy: 50
   update_epochs_value: 50
   update_every: 25

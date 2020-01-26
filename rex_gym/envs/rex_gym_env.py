@@ -57,7 +57,7 @@ class RexGymEnv(gym.Env):
                  distance_weight=1.0,
                  energy_weight=0.005,
                  shake_weight=0.0,
-                 drift_weight=0.0,
+                 drift_weight=2.0,
                  distance_limit=float("inf"),
                  observation_noise_stdev=SENSOR_NOISE_STDDEV,
                  self_collision_enabled=True,
@@ -171,6 +171,7 @@ class RexGymEnv(gym.Env):
         self._num_steps_to_log = num_steps_to_log
         self._is_render = render
         self._last_base_position = [0, 0, 0]
+        self._last_base_orientation = [0, 0, 0, 1]
         self._distance_weight = distance_weight
         self._energy_weight = energy_weight
         self._drift_weight = drift_weight
@@ -218,6 +219,7 @@ class RexGymEnv(gym.Env):
         self.observation_space = spaces.Box(observation_low, observation_high)
         self.viewer = None
         self._hard_reset = hard_reset  # This assignment need to be after reset()
+        self.goal_reached = False
 
     def close(self):
         if self._env_step_counter > 0:
@@ -279,6 +281,7 @@ class RexGymEnv(gym.Env):
         self._pybullet_client.setPhysicsEngineParameter(enableConeFriction=0)
         self._env_step_counter = 0
         self._last_base_position = [0, 0, 0]
+        self._last_base_orientation = [0, 0, 0, 1]
         self._objectives = []
         self._pybullet_client.resetDebugVisualizerCamera(self._cam_dist, self._cam_yaw,
                                                          self._cam_pitch, [0, 0, 0])
@@ -315,6 +318,7 @@ class RexGymEnv(gym.Env):
       ValueError: The magnitude of actions is out of bounds.
     """
         self._last_base_position = self.rex.GetBasePosition()
+        self._last_base_orientation = self.rex.GetBaseOrientation()
         # print("ACTION:")
         # print(action)
         if self._is_render:
@@ -423,11 +427,12 @@ class RexGymEnv(gym.Env):
         rot_mat = self._pybullet_client.getMatrixFromQuaternion(orientation)
         local_up = rot_mat[6:]
         pos = self.rex.GetBasePosition()
-        return (np.dot(np.asarray([0, 0, 1]), np.asarray(local_up)) < 0.85 or pos[2] < 0.13)
+        #  or pos[2] < 0.13
+        return (np.dot(np.asarray([0, 0, 1]), np.asarray(local_up)) < 0.85)
 
     def _termination(self):
         position = self.rex.GetBasePosition()
-        distance = math.sqrt(position[0] ** 2 + position[1] ** 2)
+        # distance = math.sqrt(position[0] ** 2 + position[1] ** 2)
         # print("POSITION")
         # print(position)
         if self.is_fallen():
@@ -435,12 +440,14 @@ class RexGymEnv(gym.Env):
         o = self.rex.GetBaseOrientation()
         if o[1] < -0.13:
             print("IS ROTATING!")
-        if position[2] <= 0.12:
-            print("LOW POSITION")
-        return self.is_fallen() or position[2] <= 0.12 or o[1] < -0.13
+        # if position[2] <= 0.12:
+        #     print("LOW POSITION")
+        # or position[2] <= 0.12
+        return self.is_fallen() or o[1] < -0.13
 
     def _reward(self):
         current_base_position = self.rex.GetBasePosition()
+        # side_penality = -abs(current_base_position[1])
         # forward direction
         forward_reward = -current_base_position[0] + self._last_base_position[0]
         # target_reward = 0.0
@@ -461,9 +468,10 @@ class RexGymEnv(gym.Env):
         objectives = [forward_reward, energy_reward, drift_reward, shake_reward]
         weighted_objectives = [o * w for o, w in zip(objectives, self._objective_weights)]
         reward = sum(weighted_objectives)
+                 # - side_penality
         self._objectives.append(objectives)
         # print("REWARD:")
-        # print(forward_reward)
+        # print(reward)
         return reward
 
     def get_objectives(self):

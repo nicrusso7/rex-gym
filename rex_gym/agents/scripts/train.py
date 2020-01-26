@@ -18,10 +18,6 @@ Command line:
   python3 -m agents.scripts.train --logdir=... --config=...
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import datetime
 import functools
 import os

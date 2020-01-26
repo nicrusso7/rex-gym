@@ -1,9 +1,11 @@
 import os
+import platform
 from distutils.core import setup
 
 from setuptools import find_packages
 
 this_directory = os.path.abspath(os.path.dirname(__file__))
+os_name = platform.system()
 
 with open(os.path.join(this_directory, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
@@ -11,13 +13,17 @@ with open(os.path.join(this_directory, 'README.md'), encoding='utf-8') as f:
 
 def copy_assets(dir_path):
     base_dir = os.path.join('rex_gym', dir_path)
+    if os_name == 'Windows':
+        sep = '\\'
+    else:
+        sep = '/'
     for (dirpath, dirnames, files) in os.walk(base_dir):
         for f in files:
-            yield os.path.join(dirpath.split('/', 1)[1], f)
+            yield os.path.join(dirpath.split(sep, 1)[1], f)
 
 setup(
     name='rex_gym',
-    version='0.1.7',
+    version='0.1.8',
     license='Apache 2.0',
     packages=find_packages(),
     author='Nicola Russo',

@@ -1,0 +1,6 @@
+model_checkpoint_path: "/home/seven/dev/test/standup/20200125T155936-rex_standup/model.ckpt-10000000"
+all_model_checkpoint_paths: "/home/seven/dev/test/standup/20200125T155936-rex_standup/model.ckpt-8000000"
+all_model_checkpoint_paths: "/home/seven/dev/test/standup/20200125T155936-rex_standup/model.ckpt-8500000"
+all_model_checkpoint_paths: "/home/seven/dev/test/standup/20200125T155936-rex_standup/model.ckpt-9000000"
+all_model_checkpoint_paths: "/home/seven/dev/test/standup/20200125T155936-rex_standup/model.ckpt-9500000"
+all_model_checkpoint_paths: "/home/seven/dev/test/standup/20200125T155936-rex_standup/model.ckpt-10000000"
