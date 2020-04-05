@@ -4,6 +4,10 @@ The goal of this project is to train an open-source 3D printed quadruped robot e
 successfully transfer the knowledge  (`Control Policies`) on the real robot without any other manual tuning.
 
 This project is mostly inspired by the incredible works done by Boston Dynamics.
+## Related repositories
+[rexctl](https://github.com/nicrusso7/rexctl) - A CLI application to bootstrap and control Rex running the trained `Control Policies`.
+
+[rex-cloud](https://github.com/nicrusso7/rex-cloud) - A CLI application to train Rex on the cloud.
 
 # Rex-gym: OpenAI Gym environments and tools
 This repository contains different `OpenAI Gym Environments` used to train Rex, the Rex URDF model, 
