@@ -21,6 +21,7 @@ def copy_assets(dir_path):
         for f in files:
             yield os.path.join(dirpath.split(sep, 1)[1], f)
 
+
 setup(
     name='rex_gym',
     version='0.1.8',
@@ -42,8 +43,8 @@ setup(
     package_data={
         '': [f for f in copy_assets('policies')] + [a for a in copy_assets('util')]
     },
-    keywords=['openai', 'gym', 'robot', 'quadruped', 'pybullet', 'ai', 'reinforcement learning', 'machine learning', 'RL',
-              'ML', 'tensorflow', 'spotmicro', 'rex'],
+    keywords=['openai', 'gym', 'robot', 'quadruped', 'pybullet', 'ai', 'reinforcement learning', 'machine learning',
+              'RL', 'ML', 'tensorflow', 'spotmicro', 'rex'],
     classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',

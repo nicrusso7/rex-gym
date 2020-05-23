@@ -34,6 +34,7 @@ register(
     entry_point='rex_gym.envs.gym.turn_env:RexTurnEnv',
     max_episode_steps=1000,
     reward_threshold=5.0,
+    kwargs={'target_orient': None, 'init_orient': None}
 )
 
 register(

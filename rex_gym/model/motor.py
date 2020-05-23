@@ -2,6 +2,7 @@
 
 import numpy as np
 
+# TODO: set params to match mg996r servo
 VOLTAGE_CLIPPING = 50
 # TODO: Clamp the pwm signal instead of the OBSERVED_TORQUE_LIMIT.
 OBSERVED_TORQUE_LIMIT = 5.7
@@ -16,15 +17,15 @@ NUM_MOTORS = 12
 class MotorModel(object):
     """The accurate motor model, which is based on the physics of DC motors.
 
-  The motor model support two types of control: position control and torque
-  control. In position control mode, a desired motor angle is specified, and a
-  torque is computed based on the internal motor model. When the torque control
-  is specified, a pwm signal in the range of [-1.0, 1.0] is converted to the
-  torque.
+        The motor model support two types of control: position control and torque
+        control. In position control mode, a desired motor angle is specified, and a
+        torque is computed based on the internal motor model. When the torque control
+        is specified, a pwm signal in the range of [-1.0, 1.0] is converted to the
+        torque.
 
-  The internal motor model takes the following factors into consideration:
-  pd gains, viscous friction, back-EMF voltage and current-torque profile.
-  """
+        The internal motor model takes the following factors into consideration:
+        pd gains, viscous friction, back-EMF voltage and current-torque profile.
+    """
 
     def __init__(self, torque_control_enabled=False, kp=1.2, kd=0):
         self._torque_control_enabled = torque_control_enabled
@@ -41,22 +42,22 @@ class MotorModel(object):
     def set_strength_ratios(self, ratios):
         """Set the strength of each motors relative to the default value.
 
-    Args:
-      ratios: The relative strength of motor output. A numpy array ranging from
-        0.0 to 1.0.
-    """
+        Args:
+          ratios: The relative strength of motor output. A numpy array ranging from
+            0.0 to 1.0.
+        """
         self._strength_ratios = np.array(ratios)
 
     def set_motor_gains(self, kp, kd):
         """Set the gains of all motors.
 
-    These gains are PD gains for motor positional control. kp is the
-    proportional gain and kd is the derivative gain.
+        These gains are PD gains for motor positional control. kp is the
+        proportional gain and kd is the derivative gain.
 
-    Args:
-      kp: proportional gain of the motors.
-      kd: derivative gain of the motors.
-    """
+        Args:
+          kp: proportional gain of the motors.
+          kd: derivative gain of the motors.
+        """
         self._kp = kp
         self._kd = kd
 
@@ -81,25 +82,25 @@ class MotorModel(object):
                           kd=None):
         """Convert the commands (position control or torque control) to torque.
 
-    Args:
-      motor_commands: The desired motor angle if the motor is in position
-        control mode. The pwm signal if the motor is in torque control mode.
-      motor_angle: The motor angle observed at the current time step. It is
-        actually the true motor angle observed a few milliseconds ago (pd
-        latency).
-      motor_velocity: The motor velocity observed at the current time step, it
-        is actually the true motor velocity a few milliseconds ago (pd latency).
-      true_motor_velocity: The true motor velocity. The true velocity is used
-        to compute back EMF voltage and viscous damping.
-      kp: Proportional gains for the motors' PD controllers. If not provided, it
-        uses the default kp of Rex for all the motors.
-      kd: Derivative gains for the motors' PD controllers. If not provided, it
-        uses the default kp of Rex for all the motors.
+        Args:
+          motor_commands: The desired motor angle if the motor is in position
+            control mode. The pwm signal if the motor is in torque control mode.
+          motor_angle: The motor angle observed at the current time step. It is
+            actually the true motor angle observed a few milliseconds ago (pd
+            latency).
+          motor_velocity: The motor velocity observed at the current time step, it
+            is actually the true motor velocity a few milliseconds ago (pd latency).
+          true_motor_velocity: The true motor velocity. The true velocity is used
+            to compute back EMF voltage and viscous damping.
+          kp: Proportional gains for the motors' PD controllers. If not provided, it
+            uses the default kp of Rex for all the motors.
+          kd: Derivative gains for the motors' PD controllers. If not provided, it
+            uses the default kp of Rex for all the motors.
 
-    Returns:
-      actual_torque: The torque that needs to be applied to the motor.
-      observed_torque: The torque observed by the sensor.
-    """
+        Returns:
+          actual_torque: The torque that needs to be applied to the motor.
+          observed_torque: The torque observed by the sensor.
+        """
         if self._torque_control_enabled:
             pwm = motor_commands
         else:
@@ -107,10 +108,6 @@ class MotorModel(object):
                 kp = np.full(NUM_MOTORS, self._kp)
             if kd is None:
                 kd = np.full(NUM_MOTORS, self._kd)
-            # print("MOTOR ANGLE")
-            # print(motor_angle)
-            # print("MOTOR COMMANDS")
-            # print(motor_commands)
             pwm = -1 * kp * (motor_angle - motor_commands) - kd * motor_velocity
 
         pwm = np.clip(pwm, -1.0, 1.0)
@@ -119,14 +116,14 @@ class MotorModel(object):
     def _convert_to_torque_from_pwm(self, pwm, true_motor_velocity):
         """Convert the pwm signal to torque.
 
-    Args:
-      pwm: The pulse width modulation.
-      true_motor_velocity: The true motor velocity at the current moment. It is
-        used to compute the back EMF voltage and the viscous damping.
-    Returns:
-      actual_torque: The torque that needs to be applied to the motor.
-      observed_torque: The torque observed by the sensor.
-    """
+        Args:
+          pwm: The pulse width modulation.
+          true_motor_velocity: The true motor velocity at the current moment. It is
+            used to compute the back EMF voltage and the viscous damping.
+        Returns:
+          actual_torque: The torque that needs to be applied to the motor.
+          observed_torque: The torque observed by the sensor.
+        """
         observed_torque = np.clip(
             self._torque_constant * (np.asarray(pwm) * self._voltage / self._resistance),
             -OBSERVED_TORQUE_LIMIT, OBSERVED_TORQUE_LIMIT)
@@ -143,6 +140,4 @@ class MotorModel(object):
         actual_torque = np.interp(current_magnitude, self._current_table, self._torque_table)
         actual_torque = np.multiply(current_sign, actual_torque)
         actual_torque = np.multiply(self._strength_ratios, actual_torque)
-        # print("TORQUE")
-        # print(actual_torque)
         return actual_torque, observed_torque

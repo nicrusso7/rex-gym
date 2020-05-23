@@ -16,14 +16,10 @@ TARGET_POSITION = [0.0, 0.0, 0.21]
 
 class RexTurnEnv(rex_gym_env.RexGymEnv):
     """The gym environment for the rex.
-
-  It simulates the locomotion of a rex, a quadruped robot. The state space
-  include the angles, velocities and torques for all the motors and the action
-  space is the desired motor angle for each motor. The reward function is based
-  on how far the rex walks in 1000 steps and penalizes the energy
-  expenditure.
-
-  """
+    It simulates the locomotion of a rex, a quadruped robot. The state space
+    include the angles, velocities and torques for all the motors and the action
+    space is the desired motor angle for each motor. The reward function is based
+    on how far the rex walks in 1000 steps and penalizes the energy expenditure."""
     metadata = {"render.modes": ["human", "rgb_array"], "video.frames_per_second": 66}
 
     def __init__(self,
@@ -39,52 +35,56 @@ class RexTurnEnv(rex_gym_env.RexGymEnv):
                  render=False,
                  num_steps_to_log=1000,
                  env_randomizer=None,
-                 log_path=None):
+                 log_path=None,
+                 target_orient=None,
+                 init_orient=None):
         """Initialize the rex alternating legs gym environment.
 
-    Args:
-      urdf_version: [DEFAULT_URDF_VERSION, DERPY_V0_URDF_VERSION] are allowable
-        versions. If None, DEFAULT_URDF_VERSION is used. Refer to
-        rex_gym_env for more details.
-      control_time_step: The time step between two successive control signals.
-      action_repeat: The number of simulation steps that an action is repeated.
-      control_latency: The latency between get_observation() and the actual
-        observation. See minituar.py for more details.
-      pd_latency: The latency used to get motor angles/velocities used to
-        compute PD controllers. See rex.py for more details.
-      on_rack: Whether to place the rex on rack. This is only used to debug
-        the walking gait. In this mode, the rex's base is hung midair so
-        that its walking gait is clearer to visualize.
-      motor_kp: The P gain of the motor.
-      motor_kd: The D gain of the motor.
-      remove_default_joint_damping: Whether to remove the default joint damping.
-      render: Whether to render the simulation.
-      num_steps_to_log: The max number of control steps in one episode. If the
-        number of steps is over num_steps_to_log, the environment will still
-        be running, but only first num_steps_to_log will be recorded in logging.
-      env_randomizer: An instance (or a list) of EnvRanzomier(s) that can
-        randomize the environment during when env.reset() is called and add
-        perturbations when env.step() is called.
-      log_path: The path to write out logs. For the details of logging, refer to
-        rex_logging.proto.
-    """
-        super(RexTurnEnv,
-              self).__init__(urdf_version=urdf_version,
-                             accurate_motor_model_enabled=True,
-                             motor_overheat_protection=True,
-                             hard_reset=False,
-                             motor_kp=motor_kp,
-                             motor_kd=motor_kd,
-                             remove_default_joint_damping=remove_default_joint_damping,
-                             control_latency=control_latency,
-                             pd_latency=pd_latency,
-                             on_rack=on_rack,
-                             render=render,
-                             num_steps_to_log=num_steps_to_log,
-                             env_randomizer=env_randomizer,
-                             log_path=log_path,
-                             control_time_step=control_time_step,
-                             action_repeat=action_repeat)
+        Args:
+          urdf_version: [DEFAULT_URDF_VERSION, DERPY_V0_URDF_VERSION] are allowable
+            versions. If None, DEFAULT_URDF_VERSION is used. Refer to
+            rex_gym_env for more details.
+          control_time_step: The time step between two successive control signals.
+          action_repeat: The number of simulation steps that an action is repeated.
+          control_latency: The latency between get_observation() and the actual
+            observation. See minituar.py for more details.
+          pd_latency: The latency used to get motor angles/velocities used to
+            compute PD controllers. See rex.py for more details.
+          on_rack: Whether to place the rex on rack. This is only used to debug
+            the walking gait. In this mode, the rex's base is hung midair so
+            that its walking gait is clearer to visualize.
+          motor_kp: The P gain of the motor.
+          motor_kd: The D gain of the motor.
+          remove_default_joint_damping: Whether to remove the default joint damping.
+          render: Whether to render the simulation.
+          num_steps_to_log: The max number of control steps in one episode. If the
+            number of steps is over num_steps_to_log, the environment will still
+            be running, but only first num_steps_to_log will be recorded in logging.
+          env_randomizer: An instance (or a list) of EnvRanzomier(s) that can
+            randomize the environment during when env.reset() is called and add
+            perturbations when env.step() is called.
+          log_path: The path to write out logs. For the details of logging, refer to
+            rex_logging.proto.
+        """
+        super(RexTurnEnv, self).__init__(
+            urdf_version=urdf_version,
+            accurate_motor_model_enabled=True,
+            motor_overheat_protection=True,
+            hard_reset=False,
+            motor_kp=motor_kp,
+            motor_kd=motor_kd,
+            remove_default_joint_damping=remove_default_joint_damping,
+            control_latency=control_latency,
+            pd_latency=pd_latency,
+            on_rack=on_rack,
+            render=render,
+            num_steps_to_log=num_steps_to_log,
+            env_randomizer=env_randomizer,
+            log_path=log_path,
+            control_time_step=control_time_step,
+            action_repeat=action_repeat,
+            target_orient=target_orient,
+            init_orient=init_orient)
 
         action_dim = 12
         action_high = np.array([0.1] * action_dim)
@@ -93,8 +93,13 @@ class RexTurnEnv(rex_gym_env.RexGymEnv):
         self._cam_yaw = 30
         self._cam_pitch = -30
         self.last_step = 0
+
         self.stand = False
         self.brake = False
+        self._target_orient = target_orient
+        self._init_orient = init_orient
+        self._random_target = False
+        self._random_start = False
         if self._on_rack:
             self._cam_pitch = 0
 
@@ -103,13 +108,22 @@ class RexTurnEnv(rex_gym_env.RexGymEnv):
         self.goal_reached = False
         self.stand = False
         super(RexTurnEnv, self).reset()
-        position = self.rex.init_position
-        if not self._on_rack:
-            self.random_start_angle = random.uniform(0.2, 5.8)
-        else:
-            self.random_start_angle = 2.1
+        if self._target_orient is None or self._random_target:
+            self._target_orient = random.uniform(0.2, 5.8)
+            self._random_target = True
+
+        if self._on_rack:
+            # on rack debug simulation
+            self._init_orient = 2.1
             position = self.rex.init_on_rack_position
-        q = self.pybullet_client.getQuaternionFromEuler([0, 0, self.random_start_angle])
+        else:
+            position = self.rex.init_position
+            if self._init_orient is None or self._random_start:
+                self._init_orient = random.uniform(0.2, 5.8)
+                self._random_start = True
+        print(f"Start Orientation: {self._init_orient}, Target Orientation: {self._target_orient}")
+        print("Turning left") if self._init_orient - self._target_orient > 3.14 else print("Turning right")
+        q = self.pybullet_client.getQuaternionFromEuler([0, 0, self._init_orient])
         self.pybullet_client.resetBasePositionAndOrientation(self.rex.quadruped, position, q)
         return self._get_observation()
 
@@ -140,7 +154,7 @@ class RexTurnEnv(rex_gym_env.RexGymEnv):
                                  -swipe, 0, swing])
         }
 
-        if self.random_start_angle > 3:
+        if (self._init_orient - self._target_orient) > 3.14:
             # turn left
             first_leg = pose['left_0']
             second_leg = pose['left_1']
@@ -178,28 +192,30 @@ class RexTurnEnv(rex_gym_env.RexGymEnv):
     def is_fallen(self):
         """Decide whether the rex has fallen.
 
-    If the up directions between the base and the world is large (the dot
-    product is smaller than 0.85), the rex is considered fallen.
+        If the up directions between the base and the world is large (the dot
+        product is smaller than 0.85), the rex is considered fallen.
 
-    Returns:
-      Boolean value that indicates whether the rex has fallen.
-    """
+        Returns:
+          Boolean value that indicates whether the rex has fallen.
+        """
         orientation = self.rex.GetBaseOrientation()
         rot_mat = self._pybullet_client.getMatrixFromQuaternion(orientation)
         local_up = rot_mat[6:]
         return np.dot(np.asarray([0, 0, 1]), np.asarray(local_up)) < 0.85
 
     def _reward(self):
-        t_orient = [0.0, 0.0, 0.0]
         current_base_position = self.rex.GetBasePosition()
         current_base_orientation = self.pybullet_client.getEulerFromQuaternion(self.rex.GetBaseOrientation())
-        proximity_reward = abs(t_orient[0] - current_base_orientation[0]) + \
-                           abs(t_orient[1] - current_base_orientation[1]) + \
-                           abs(t_orient[2] - current_base_orientation[2])
+        target_orient = (0, 0, self._target_orient)
+        proximity_reward = \
+            abs(target_orient[0] - current_base_orientation[0]) + \
+            abs(target_orient[1] - current_base_orientation[1]) + \
+            abs(target_orient[2] - current_base_orientation[2])
 
-        position_reward = abs(TARGET_POSITION[0] - current_base_position[0]) + \
-                          abs(TARGET_POSITION[1] - current_base_position[1]) + \
-                          abs(TARGET_POSITION[2] - current_base_position[2])
+        position_reward = \
+            abs(TARGET_POSITION[0] - current_base_position[0]) + \
+            abs(TARGET_POSITION[1] - current_base_position[1]) + \
+            abs(TARGET_POSITION[2] - current_base_position[2])
 
         is_oriented = False
         is_pos = False
@@ -220,18 +236,17 @@ class RexTurnEnv(rex_gym_env.RexGymEnv):
             self.goal_t = self.rex.GetTimeSinceReset()
 
         reward = position_reward + proximity_reward
-        # print(reward)
         return reward
 
     def _get_true_observation(self):
         """Get the true observations of this environment.
 
-    It includes the roll, the error between current pitch and desired pitch,
-    roll dot and pitch dot of the base.
+        It includes the roll, the error between current pitch and desired pitch,
+        roll dot and pitch dot of the base.
 
-    Returns:
-      The observation list.
-    """
+        Returns:
+          The observation list.
+        """
         observation = []
         roll, pitch, _ = self.rex.GetTrueBaseRollPitchYaw()
         roll_rate, pitch_rate, _ = self.rex.GetTrueBaseRollPitchYawRate()
@@ -252,10 +267,10 @@ class RexTurnEnv(rex_gym_env.RexGymEnv):
     def _get_observation_upper_bound(self):
         """Get the upper bound of the observation.
 
-    Returns:
-      The upper bound of an observation. See GetObservation() for the details
-        of each element of an observation.
-    """
+        Returns:
+          The upper bound of an observation. See GetObservation() for the details
+            of each element of an observation.
+        """
         upper_bound = np.zeros(self._get_observation_dimension())
         upper_bound[0:2] = 2 * math.pi  # Roll, pitch, yaw of the base.
         upper_bound[2:4] = 2 * math.pi / self._time_step  # Roll, pitch, yaw rate.
@@ -264,31 +279,3 @@ class RexTurnEnv(rex_gym_env.RexGymEnv):
     def _get_observation_lower_bound(self):
         lower_bound = -self._get_observation_upper_bound()
         return lower_bound
-
-    def set_swing_offset(self, value):
-        """Set the swing offset of each leg.
-
-    It is to mimic the bent leg.
-
-    Args:
-      value: A list of four values.
-    """
-        self._swing_offset = value
-
-    def set_extension_offset(self, value):
-        """Set the extension offset of each leg.
-
-    It is to mimic the bent leg.
-
-    Args:
-      value: A list of four values.
-    """
-        self._extension_offset = value
-
-    def set_desired_pitch(self, value):
-        """Set the desired pitch of the base, which is a user input.
-
-    Args:
-      value: A scalar.
-    """
-        self.desired_pitch = value

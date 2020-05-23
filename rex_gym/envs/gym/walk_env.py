@@ -97,7 +97,8 @@ class RexWalkEnv(rex_gym_env.RexGymEnv):
         super(RexWalkEnv, self).reset()
         return self._get_observation()
 
-    def _convert_from_leg_model(self, leg_pose):
+    @staticmethod
+    def _convert_from_leg_model(leg_pose):
         motor_pose = np.zeros(NUM_MOTORS)
         for i in range(NUM_LEGS):
             if i % 2 == 0:

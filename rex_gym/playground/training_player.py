@@ -65,6 +65,7 @@ register(
     entry_point='rex_gym.envs.gym.turn_env:RexTurnEnv',
     max_episode_steps=1000,
     reward_threshold=5.0,
+    # @TODO add args here, e.g. 'target_orient': 1, 'init_orient': 2
     kwargs={'render': True},
 )
 
@@ -90,6 +91,7 @@ def _create_environment(config):
         env = gym.make('test-'+config.env)
     else:
         env = config.env()
+
     if config.max_length:
         env = wrappers.LimitDuration(env, config.max_length)
     env = wrappers.RangeNormalize(env)
@@ -135,16 +137,16 @@ def _define_loop(graph, logdir, train_steps, eval_steps):
 def train(config, env_processes):
     """Training and evaluation entry point yielding scores.
 
-  Resolves some configuration attributes, creates environments, graph, and
-  training loop. By default, assigns all operations to the CPU.
+      Resolves some configuration attributes, creates environments, graph, and
+      training loop. By default, assigns all operations to the CPU.
 
-  Args:
-    config: Object providing configurations via attributes.
-    env_processes: Whether to step environments in separate processes.
+      Args:
+        config: Object providing configurations via attributes.
+        env_processes: Whether to step environments in separate processes.
 
-  Yields:
-    Evaluation scores.
-  """
+      Yields:
+        Evaluation scores.
+      """
     tf.reset_default_graph()
     with config.unlocked:
         config.network = functools.partial(utility.define_network, config.network, config)
