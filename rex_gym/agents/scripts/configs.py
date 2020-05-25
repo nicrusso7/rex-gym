@@ -17,14 +17,15 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from .. import ppo
+from ..ppo.algorithm import PPOAlgorithm
+
 from ..scripts import networks
 
 
 def default():
     """Default configuration for PPO."""
     # General
-    algorithm = ppo.PPOAlgorithm
+    algorithm = PPOAlgorithm
     num_agents = 25
     eval_episodes = 25
     use_gpu = False
@@ -52,7 +53,7 @@ def default():
     return locals()
 
 
-def rex_galloping():
+def gallop():
     """Configuration for Rex galloping task."""
     locals().update(default())
     # Environment
@@ -62,7 +63,7 @@ def rex_galloping():
     return locals()
 
 
-def rex_walk():
+def walk():
     """Configuration for Rex walking task."""
     locals().update(default())
     # Environment
@@ -72,7 +73,7 @@ def rex_walk():
     return locals()
 
 
-def rex_turn():
+def turn():
     """Configuration for Rex turn task."""
     locals().update(default())
     # Environment
@@ -82,8 +83,8 @@ def rex_turn():
     return locals()
 
 
-def rex_standup():
-    """Configuration for Rex standup task."""
+def standup():
+    """Configuration for Rex stand up task."""
     locals().update(default())
     # Environment
     env = 'RexStandup-v0'

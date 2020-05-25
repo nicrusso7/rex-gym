@@ -1,9 +1,4 @@
 """An agent that can restore and run a policy learned by PPO."""
-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import tensorflow as tf
 from . import normalize
 from ..scripts import utility

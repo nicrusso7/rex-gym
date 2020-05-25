@@ -109,7 +109,7 @@ class RexTurnEnv(rex_gym_env.RexGymEnv):
         self.stand = False
         super(RexTurnEnv, self).reset()
         if self._target_orient is None or self._random_target:
-            self._target_orient = random.uniform(0.2, 5.8)
+            self._target_orient = random.uniform(0.2, 6)
             self._random_target = True
 
         if self._on_rack:
@@ -119,7 +119,7 @@ class RexTurnEnv(rex_gym_env.RexGymEnv):
         else:
             position = self.rex.init_position
             if self._init_orient is None or self._random_start:
-                self._init_orient = random.uniform(0.2, 5.8)
+                self._init_orient = random.uniform(0.2, 6)
                 self._random_start = True
         print(f"Start Orientation: {self._init_orient}, Target Orientation: {self._target_orient}")
         print("Turning left") if self._init_orient - self._target_orient > 3.14 else print("Turning right")
@@ -153,8 +153,8 @@ class RexTurnEnv(rex_gym_env.RexGymEnv):
                                  swipe, 0, -swing,
                                  -swipe, 0, swing])
         }
-
-        if (self._init_orient - self._target_orient) > 3.14:
+        diff = self._init_orient - self._target_orient
+        if diff > 3.14 or diff < 0:
             # turn left
             first_leg = pose['left_0']
             second_leg = pose['left_1']

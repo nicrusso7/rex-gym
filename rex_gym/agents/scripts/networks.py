@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Networks for the PPO algorithm defined as recurrent cells."""
-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import tensorflow as tf
 
 _MEAN_WEIGHTS_INITIALIZER = tf.contrib.layers.variance_scaling_initializer(factor=0.1)
@@ -49,7 +44,7 @@ class LinearGaussianPolicy(tf.contrib.rnn.RNNCell):
 
     @property
     def output_size(self):
-        return (self._action_size, self._action_size, tf.TensorShape([]))
+        return self._action_size, self._action_size, tf.TensorShape([])
 
     def __call__(self, observation, state):
         with tf.variable_scope('policy'):
@@ -94,7 +89,7 @@ class ForwardGaussianPolicy(tf.contrib.rnn.RNNCell):
 
     @property
     def output_size(self):
-        return (self._action_size, self._action_size, tf.TensorShape([]))
+        return self._action_size, self._action_size, tf.TensorShape([])
 
     def __call__(self, observation, state):
         with tf.variable_scope('policy'):
@@ -142,7 +137,7 @@ class RecurrentGaussianPolicy(tf.contrib.rnn.RNNCell):
 
     @property
     def output_size(self):
-        return (self._action_size, self._action_size, tf.TensorShape([]))
+        return self._action_size, self._action_size, tf.TensorShape([])
 
     def __call__(self, observation, state):
         with tf.variable_scope('policy'):

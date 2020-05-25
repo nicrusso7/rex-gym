@@ -10,6 +10,9 @@ os_name = platform.system()
 with open(os.path.join(this_directory, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
+with open(os.path.join(this_directory, 'requirements.txt'), encoding='utf-8') as f:
+    requirements = f.read()
+
 
 def copy_assets(dir_path):
     base_dir = os.path.join('rex_gym', dir_path)
@@ -24,7 +27,7 @@ def copy_assets(dir_path):
 
 setup(
     name='rex_gym',
-    version='0.1.8',
+    version='0.1.9',
     license='Apache 2.0',
     packages=find_packages(),
     author='Nicola Russo',
@@ -33,13 +36,11 @@ setup(
     long_description_content_type='text/markdown',
     url='https://github.com/nicrusso7/rex-gym',
     download_url='https://github.com/nicrusso7/rex-gym/archive/master.zip',
-    install_requires=[
-        'numpy',
-        'pybullet',
-        'gym',
-        'tensorflow==1.15.2',
-        'ruamel.yaml'
-    ],
+    install_requires=requirements,
+    entry_points='''
+        [console_scripts]
+        rex-gym=rex_gym.cli.entry_point:cli
+    ''',
     package_data={
         '': [f for f in copy_assets('policies')] + [a for a in copy_assets('util')]
     },

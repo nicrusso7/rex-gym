@@ -12,76 +12,76 @@ This project is mostly inspired by the incredible works done by Boston Dynamics.
 # Rex-gym: OpenAI Gym environments and tools
 This repository contains different `OpenAI Gym Environments` used to train Rex, the Rex URDF model, 
 the learning agent and some scripts to start the training session and visualise the learned `Control Polices`.
+The CLI application allows batch training, policy reproduction and rendered single training sessions.
 
-## Installation
+# Installation
 Create a `Python 3.7` virtual environment, e.g. using `Anaconda`
 ```
 conda create -n rex python=3.7 anaconda
 conda activate rex
 ```
 
-### PyPI package
+## PyPI package
 Install the public `rex-gym` package:
 ```
 pip install rex_gym
 ```
 
-### Install from source
+## Install from source
 Alternately, clone this repository and run from the root of the project:
 ```
 pip install .
 ```
 
-# Run a pre-trained agent
-To start a pre-trained agent:
+# CLI
+Run ``` rex-gym --help ``` to display the available commands and ``` rex-gym COMMAND_NAME --help ``` to show the help 
+message for a specific command.
+
+## Policy player: run a pre-trained agent
+To start a pre-trained agent (play a learned `Control Policy`):
 ```
-python -m rex_gym.playground.policy_player --env ENV-NAME-HERE 
+rex-gym policy --env ENV_NAME
 ```
 
-| Environment |     Flag      |
-| ----------- | ------------- |
-| Run         | rex_galloping |
-| Walk        | rex_walk      |
-| Turn        | rex_turn      |
-| Stand up    | rex_standup   |
+## Training
+| Environment | `env` flag | `arg` flag |
+| ----------- | ---------- | ---------- |
+| Galloping      | gallop | N.A |
+| Walking        | walk | N.A |
+| Turn (on spot) | turn | `init_orient`, `target_orient` |
+| Stand up       | standup | N.A |
 
-# Run single training simulation
-To start a training simulation test (`agents=1`, `render=True`):
+| `arg` | Description |
+| ----- | ----------- |
+| init_orient | The starting orientation in rad. |
+| target_orient | The target orientation in rad. |
+
+| Flags | Description |
+| ----- | ----------- |
+| log-dir | The path where the log directory will be created. (Required) |
+| playground | A boolean to start a rendered single training session |
+| agents-number | Set the number of parallel agents |
+
+### Run a single training simulation
+To start a rendered single training session (`agents=1`, `render=True`):
 ```
-python -m rex_gym.playground.training_player --config rex_reactive --logdir YOUR_LOG_DIR_PATH
+rex-gym train --playground True --env ENV_NAME --log-dir LOG_DIR_PATH
 ```
-Where `YOUR_LOG_DIR_PATH` is the output path. 
-
-Set the `Environment` with the `--config` flag:
-
-| Environment |     Flag      |
-| ----------- | ------------- |
-| Run         | rex_galloping |
-| Walk        | rex_walk      |
-| Turn        | rex_turn      |
-| Stand up    | rex_standup   |
-
-# Start a new batch training simulation
+### Start a new batch training simulation
 To start a new batch training session:
 ```
-python -m rex_gym.agents.scripts.train --config rex_reactive --logdir YOUR_LOG_DIR_PATH 
+rex-gym train --env ENV_NAME --log-dir LOG_DIR_PATH
 ```
-Where `YOUR_LOG_DIR_PATH` is the output path. 
 
-Set the `Environment` with the `--config` flag:
-
-| Environment |     Flag      |
-| ----------- | ------------- |
-| Run         | rex_galloping |
-| Walk        | rex_walk      |
-| Turn        | rex_turn      |
-| Stand up    | rex_standup   |
-
-## PPO Agent configuration
+#### PPO Agent configuration
 You may want to edit the PPO agent's default configuration, especially the number of parallel agents launched during 
 the simulation.  
 
-Edit the `num_agents` variable in the `agents/scripts/configs.py` script:
+Use the `--agents-number` flag, e.g. `--agents-number 10`.
+
+This configuration will launch 10 agents (threads) in parallel to train your model.
+
+The default value is setup in the `agents/scripts/configs.py` script:
 
 ```
 def default():
@@ -90,7 +90,6 @@ def default():
     ...
     num_agents = 20
 ```
-Install rex_gym from source. This configuration will launch 20 agents (threads) in parallel to train your model.
 
 # Robot platform
 The robot used for this experiment is the [Spotmicro](https://www.thingiverse.com/thing:3445283) made by [Deok-yeon Kim](https://www.thingiverse.com/KDY0523/about).
@@ -113,11 +112,10 @@ The robot model is imported in `pyBullet` using an [URDF file](rex_gym/util/pybu
 This is the list of tasks this experiment will cover:
 
 1. Basic controls
-    1. Run/Walk straight on - forward/backward
+    1. Gallop/Walk straight on - forward/backward
     2. Turn left/right on the spot
     3. Stand up/Sit down
-    4. Steer - Run/Walk
-    5. Side swipe
+    4. Side swipe
 2. Fall recovery
 3. Reach a specific point in a map
 5. Grab an object

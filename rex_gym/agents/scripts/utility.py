@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Utilities for using reinforcement learning algorithms."""
-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import logging
 import os
 import re
@@ -24,7 +19,12 @@ import re
 import ruamel.yaml as yaml
 import tensorflow as tf
 
-from ..tools import *
+from rex_gym.agents.tools import wrappers
+from rex_gym.agents.tools.attr_dict import AttrDict
+from rex_gym.agents.tools.batch_env import BatchEnv
+from rex_gym.agents.tools.count_weights import count_weights
+from rex_gym.agents.tools.in_graph_batch_env import InGraphBatchEnv
+from rex_gym.agents.tools.simulate import simulate
 
 
 def define_simulation_graph(batch_env, algo_cls, config):

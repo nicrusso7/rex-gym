@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Execute operations in a loop and coordinate logging and checkpoints."""
-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import collections
 import os
 
@@ -151,7 +146,8 @@ class Loop(object):
                 summary_step = epoch * longest_phase + steps_in
                 phase.writer.add_summary(summary, summary_step)
 
-    def _is_every_steps(self, phase_step, batch, every):
+    @staticmethod
+    def _is_every_steps(phase_step, batch, every):
         """Determine whether a periodic event should happen at this step.
 
     Args:
