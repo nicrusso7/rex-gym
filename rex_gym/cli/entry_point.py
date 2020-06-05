@@ -27,9 +27,9 @@ def policy(env, arg):
 @click.option('--log-dir', '-l', required=True, help="The path where the log directory will be created.")
 @click.option('--playground', '-p', type=bool, default=False, help="Playground training: 1 agent, render enabled.")
 @click.option('--agents-number', '-n', type=int, default=None, help=" Set the number of parallel agents.")
-def train(env, arg, log_dir, playground, agent_number):
+def train(env, arg, log_dir, playground, agents_number):
     from rex_gym.playground.trainer import Trainer
     args = {}
     for k, v in arg:
         args[k] = v
-    Trainer(env, args, playground, log_dir, agent_number).start_training()
+    Trainer(env, args, playground, log_dir, agents_number).start_training()

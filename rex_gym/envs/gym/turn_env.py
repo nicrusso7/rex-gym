@@ -122,7 +122,8 @@ class RexTurnEnv(rex_gym_env.RexGymEnv):
                 self._init_orient = random.uniform(0.2, 6)
                 self._random_start = True
         print(f"Start Orientation: {self._init_orient}, Target Orientation: {self._target_orient}")
-        print("Turning left") if self._init_orient - self._target_orient > 3.14 else print("Turning right")
+        clockwise = self._solve_direction()
+        print("Turning right") if clockwise else print("Turning left")
         q = self.pybullet_client.getQuaternionFromEuler([0, 0, self._init_orient])
         self.pybullet_client.resetBasePositionAndOrientation(self.rex.quadruped, position, q)
         return self._get_observation()
@@ -153,21 +154,32 @@ class RexTurnEnv(rex_gym_env.RexGymEnv):
                                  swipe, 0, -swing,
                                  -swipe, 0, swing])
         }
-        diff = self._init_orient - self._target_orient
-        if diff > 3.14 or diff < 0:
-            # turn left
-            first_leg = pose['left_0']
-            second_leg = pose['left_1']
-        else:
+        clockwise = self._solve_direction()
+        if clockwise:
             # turn right
             first_leg = pose['right_0']
             second_leg = pose['right_1']
+        else:
+            # turn left
+            first_leg = pose['left_0']
+            second_leg = pose['left_1']
 
         if ith_leg:
             signal = initial_pose + second_leg
         else:
             signal = initial_pose + first_leg
         return signal
+
+    def _solve_direction(self):
+        diff = abs(self._init_orient - self._target_orient)
+        clockwise = False
+        if self._init_orient < self._target_orient:
+            if diff > 3.14:
+                clockwise = True
+        else:
+            if diff < 3.14:
+                clockwise = True
+        return clockwise
 
     def _convert_from_leg_model(self, leg_pose, t):
         if t < .4:
@@ -207,10 +219,14 @@ class RexTurnEnv(rex_gym_env.RexGymEnv):
         current_base_position = self.rex.GetBasePosition()
         current_base_orientation = self.pybullet_client.getEulerFromQuaternion(self.rex.GetBaseOrientation())
         target_orient = (0, 0, self._target_orient)
+        yaw = current_base_orientation[2]
+        if yaw < 0:
+            yaw += 6.28
+
         proximity_reward = \
             abs(target_orient[0] - current_base_orientation[0]) + \
             abs(target_orient[1] - current_base_orientation[1]) + \
-            abs(target_orient[2] - current_base_orientation[2])
+            abs(target_orient[2] - yaw)
 
         position_reward = \
             abs(TARGET_POSITION[0] - current_base_position[0]) + \
@@ -219,13 +235,13 @@ class RexTurnEnv(rex_gym_env.RexGymEnv):
 
         is_oriented = False
         is_pos = False
-        if abs(proximity_reward) < 0.1:
+        if abs(proximity_reward) <= 0.15:
             proximity_reward = 100 - proximity_reward
             is_oriented = True
         else:
             proximity_reward = -proximity_reward
 
-        if abs(position_reward) < 0.1:
+        if abs(position_reward) <= 0.3:
             position_reward = 100 - position_reward
             is_pos = True
         else:

@@ -121,4 +121,4 @@ class Trainer:
         config = AttrDict(getattr(configs, self.env_id)())
         config = utility.save_config(config, full_logdir)
         for score in self._train(config, True):
-            logging.info('Score {}.'.format(score))
+            tf.logging.info('Score {}.'.format(score))
