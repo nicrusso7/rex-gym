@@ -6,12 +6,15 @@ import random
 
 from gym import spaces
 import numpy as np
+from rex_gym.util import pybullet_data
+
 from .. import rex_gym_env
 
 NUM_LEGS = 4
 NUM_MOTORS = 3 * NUM_LEGS
 STEP_PERIOD = 1.0 / 10.0  # 10 steps per second.
 TARGET_POSITION = [0.0, 0.0, 0.21]
+COMPANION_OBJECTS = {}
 
 
 class RexTurnEnv(rex_gym_env.RexGymEnv):
@@ -89,28 +92,24 @@ class RexTurnEnv(rex_gym_env.RexGymEnv):
         action_dim = 12
         action_high = np.array([0.1] * action_dim)
         self.action_space = spaces.Box(-action_high, action_high)
-        self._cam_dist = 1.0
+        self._cam_dist = 1.8
         self._cam_yaw = 30
         self._cam_pitch = -30
         self.last_step = 0
-
-        self.stand = False
-        self.brake = False
         self._target_orient = target_orient
         self._init_orient = init_orient
-        self._random_target = False
-        self._random_start = False
+        self._random_orient_target = False
+        self._random_orient_start = False
+        self._cube = None
         if self._on_rack:
             self._cam_pitch = 0
 
     def reset(self):
-        self.desired_pitch = 0
         self.goal_reached = False
-        self.stand = False
         super(RexTurnEnv, self).reset()
-        if self._target_orient is None or self._random_target:
+        if self._target_orient is None or self._random_orient_target:
             self._target_orient = random.uniform(0.2, 6)
-            self._random_target = True
+            self._random_orient_target = True
 
         if self._on_rack:
             # on rack debug simulation
@@ -118,12 +117,13 @@ class RexTurnEnv(rex_gym_env.RexGymEnv):
             position = self.rex.init_on_rack_position
         else:
             position = self.rex.init_position
-            if self._init_orient is None or self._random_start:
+            if self._init_orient is None or self._random_orient_start:
                 self._init_orient = random.uniform(0.2, 6)
-                self._random_start = True
+                self._random_orient_start = True
         print(f"Start Orientation: {self._init_orient}, Target Orientation: {self._target_orient}")
         clockwise = self._solve_direction()
         print("Turning right") if clockwise else print("Turning left")
+        self._load_cube(self._target_orient)
         q = self.pybullet_client.getQuaternionFromEuler([0, 0, self._init_orient])
         self.pybullet_client.resetBasePositionAndOrientation(self.rex.quadruped, position, q)
         return self._get_observation()
@@ -145,14 +145,14 @@ class RexTurnEnv(rex_gym_env.RexGymEnv):
                                 swipe, 0, -swing,
                                 -swipe, 0, -swing,
                                 swipe, 0, swing]),
-            'right_0': np.array([-swipe, extension, -swing,
-                                 swipe, -extension, swing,
-                                 -swipe, -extension, swing,
-                                 swipe, -extension, -swing]),
-            'right_1': np.array([swipe, 0, swing,
-                                 -swipe, 0, -swing,
-                                 swipe, 0, -swing,
-                                 -swipe, 0, swing])
+            'right_0': np.array([swipe, extension, swing,
+                                 -swipe, extension, -swing,
+                                 swipe, -extension, -swing,
+                                 -swipe, -extension, swing]),
+            'right_1': np.array([-swipe, 0, -swing,
+                                 swipe, 0, swing,
+                                 -swipe, 0, swing,
+                                 swipe, 0, -swing])
         }
         clockwise = self._solve_direction()
         if clockwise:
@@ -254,6 +254,17 @@ class RexTurnEnv(rex_gym_env.RexGymEnv):
         reward = position_reward + proximity_reward
         return reward
 
+    def _load_cube(self, angle):
+        if len(COMPANION_OBJECTS) > 0:
+            self.pybullet_client.removeBody(COMPANION_OBJECTS['cube'])
+        urdf_root = pybullet_data.getDataPath()
+        self._cube = self._pybullet_client.loadURDF(f"{urdf_root}/cube_small.urdf")
+        COMPANION_OBJECTS['cube'] = self._cube
+        orientation = [0, 0, 0, 1]
+        x, y = math.cos(angle + 3.14), math.sin(angle + 3.14)
+        position = [x, y, 1]
+        self.pybullet_client.resetBasePositionAndOrientation(self._cube, position, orientation)
+
     def _get_true_observation(self):
         """Get the true observations of this environment.
 
@@ -267,7 +278,6 @@ class RexTurnEnv(rex_gym_env.RexGymEnv):
         roll, pitch, _ = self.rex.GetTrueBaseRollPitchYaw()
         roll_rate, pitch_rate, _ = self.rex.GetTrueBaseRollPitchYawRate()
         observation.extend([roll, pitch, roll_rate, pitch_rate])
-        observation[1] -= self.desired_pitch  # observation[1] is the pitch
         self._true_observation = np.array(observation)
         return self._true_observation
 
@@ -276,7 +286,6 @@ class RexTurnEnv(rex_gym_env.RexGymEnv):
         roll, pitch, _ = self.rex.GetBaseRollPitchYaw()
         roll_rate, pitch_rate, _ = self.rex.GetBaseRollPitchYawRate()
         observation.extend([roll, pitch, roll_rate, pitch_rate])
-        observation[1] -= self.desired_pitch  # observation[1] is the pitch
         self._observation = np.array(observation)
         return self._observation
 

@@ -213,8 +213,10 @@ class RexGymEnv(gym.Env):
         self._pybullet_client.setPhysicsEngineParameter(enableConeFriction=0)
         self._target_orient = target_orient
         self._init_orient = init_orient
-        self._random_target = False
-        self._random_start = False
+        self._random_pos_target = False
+        self._random_pos_start = False
+        self._random_orient_target = False
+        self._random_orient_start = False
         self.seed()
         self.reset()
         observation_high = (self._get_observation_upper_bound() + OBSERVATION_EPS)

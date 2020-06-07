@@ -1,4 +1,5 @@
 r"""Running a pre-trained ppo agent on rex environments"""
+import logging
 import os
 import site
 import time
@@ -37,5 +38,6 @@ class PolicyPlayer:
                 observation, reward, done, _ = env.step(action[0])
                 time.sleep(0.002)
                 sum_reward += reward
+                logging.info(f"Reward={sum_reward}")
                 if done:
                     break
