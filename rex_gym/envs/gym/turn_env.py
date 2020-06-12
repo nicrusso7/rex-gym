@@ -13,8 +13,6 @@ from .. import rex_gym_env
 NUM_LEGS = 4
 NUM_MOTORS = 3 * NUM_LEGS
 STEP_PERIOD = 1.0 / 10.0  # 10 steps per second.
-TARGET_POSITION = [0.0, 0.0, 0.21]
-COMPANION_OBJECTS = {}
 
 
 class RexTurnEnv(rex_gym_env.RexGymEnv):
@@ -188,6 +186,7 @@ class RexTurnEnv(rex_gym_env.RexGymEnv):
         motor_pose = np.zeros(NUM_MOTORS)
         for i in range(NUM_LEGS):
             if self.goal_reached:
+                # self.env_goal_reached = True
                 return self.rex.initial_pose
             else:
                 motor_pose[3 * i] = leg_pose[3 * i]
@@ -219,6 +218,7 @@ class RexTurnEnv(rex_gym_env.RexGymEnv):
         current_base_position = self.rex.GetBasePosition()
         current_base_orientation = self.pybullet_client.getEulerFromQuaternion(self.rex.GetBaseOrientation())
         target_orient = (0, 0, self._target_orient)
+        target_position = [0.0, 0.0, 0.21]
         yaw = current_base_orientation[2]
         if yaw < 0:
             yaw += 6.28
@@ -229,9 +229,9 @@ class RexTurnEnv(rex_gym_env.RexGymEnv):
             abs(target_orient[2] - yaw)
 
         position_reward = \
-            abs(TARGET_POSITION[0] - current_base_position[0]) + \
-            abs(TARGET_POSITION[1] - current_base_position[1]) + \
-            abs(TARGET_POSITION[2] - current_base_position[2])
+            abs(target_position[0] - current_base_position[0]) + \
+            abs(target_position[1] - current_base_position[1]) + \
+            abs(target_position[2] - current_base_position[2])
 
         is_oriented = False
         is_pos = False
@@ -249,17 +249,16 @@ class RexTurnEnv(rex_gym_env.RexGymEnv):
 
         if is_pos and is_oriented:
             self.goal_reached = True
-            self.goal_t = self.rex.GetTimeSinceReset()
 
         reward = position_reward + proximity_reward
         return reward
 
     def _load_cube(self, angle):
-        if len(COMPANION_OBJECTS) > 0:
-            self.pybullet_client.removeBody(COMPANION_OBJECTS['cube'])
+        if len(self._companion_obj) > 0:
+            self.pybullet_client.removeBody(self._companion_obj['cube'])
         urdf_root = pybullet_data.getDataPath()
         self._cube = self._pybullet_client.loadURDF(f"{urdf_root}/cube_small.urdf")
-        COMPANION_OBJECTS['cube'] = self._cube
+        self._companion_obj['cube'] = self._cube
         orientation = [0, 0, 0, 1]
         x, y = math.cos(angle + 3.14), math.sin(angle + 3.14)
         position = [x, y, 1]

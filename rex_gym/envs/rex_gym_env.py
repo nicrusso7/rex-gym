@@ -83,7 +83,9 @@ class RexGymEnv(gym.Env):
                  reflection=True,
                  log_path=None,
                  target_orient=None,
-                 init_orient=None):
+                 init_orient=None,
+                 target_position=None,
+                 start_position=None):
         """ Initialize the rex gym environment.
 
             Args:
@@ -213,10 +215,13 @@ class RexGymEnv(gym.Env):
         self._pybullet_client.setPhysicsEngineParameter(enableConeFriction=0)
         self._target_orient = target_orient
         self._init_orient = init_orient
+        self._target_position = target_position
+        self._start_position = start_position
         self._random_pos_target = False
         self._random_pos_start = False
         self._random_orient_target = False
         self._random_orient_start = False
+        self._companion_obj = {}
         self.seed()
         self.reset()
         observation_high = (self._get_observation_upper_bound() + OBSERVATION_EPS)
@@ -227,7 +232,7 @@ class RexGymEnv(gym.Env):
         self.observation_space = spaces.Box(observation_low, observation_high)
         self.viewer = None
         self._hard_reset = hard_reset  # This assignment need to be after reset()
-        self.goal_reached = False
+        self.env_goal_reached = False
 
     def close(self):
         # @TODO fix logger
@@ -431,7 +436,7 @@ class RexGymEnv(gym.Env):
         o = self.rex.GetBaseOrientation()
         if o[1] < -0.13:
             print("IS ROTATING!")
-        return self.is_fallen() or o[1] < -0.13
+        return self.is_fallen() or o[1] < -0.13 or self.env_goal_reached
 
     def _reward(self):
         current_base_position = self.rex.GetBasePosition()
