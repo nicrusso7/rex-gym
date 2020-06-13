@@ -13,10 +13,6 @@
 # limitations under the License.
 """Example configurations using the PPO algorithm."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 from ..ppo.algorithm import PPOAlgorithm
 
 from ..scripts import networks
@@ -88,6 +84,16 @@ def standup():
     locals().update(default())
     # Environment
     env = 'RexStandup-v0'
+    max_length = 1000
+    steps = 5e6  # 5M
+    return locals()
+
+
+def go():
+    """Configuration for Rex go-to task."""
+    locals().update(default())
+    # Environment
+    env = 'RexGo-v0'
     max_length = 1000
     steps = 5e6  # 5M
     return locals()

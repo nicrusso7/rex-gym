@@ -5,7 +5,7 @@ import logging
 import os
 
 import gym
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 from rex_gym.agents.tools import wrappers
 from rex_gym.agents.scripts import configs, utility

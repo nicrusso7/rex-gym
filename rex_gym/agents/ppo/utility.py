@@ -50,7 +50,7 @@ def reinit_nested_vars(variables, indices=None):
         return variables.assign(tf.zeros_like(variables))
     else:
         zeros = tf.zeros([tf.shape(indices)[0]] + variables.shape[1:].as_list())
-        return tf.scatter_update(variables, indices, zeros)
+        return tf.compat.v1.scatter_update(variables, indices, zeros)
 
 
 def assign_nested_vars(variables, tensors):
@@ -78,7 +78,7 @@ def discounted_return(reward, length, discount):
             tf.scan(lambda agg, cur: cur + discount * agg,
                     tf.transpose(tf.reverse(mask * reward, [1]), [1, 0]),
                     tf.zeros_like(reward[:, -1]), 1, False), [1, 0]), [1])
-    return tf.check_numerics(tf.stop_gradient(return_), 'return')
+    return tf.debugging.check_numerics(tf.stop_gradient(return_), 'return')
 
 
 def fixed_step_return(reward, value, length, discount, window):
@@ -91,7 +91,7 @@ def fixed_step_return(reward, value, length, discount, window):
         reward = discount * tf.concat([reward[:, 1:], tf.zeros_like(reward[:, -1:])], 1)
     return_ += discount ** window * tf.concat(
         [value[:, window:], tf.zeros_like(value[:, -window:]), 1])
-    return tf.check_numerics(tf.stop_gradient(mask * return_), 'return')
+    return tf.debugging.check_numerics(tf.stop_gradient(mask * return_), 'return')
 
 
 def lambda_return(reward, value, length, discount, lambda_):
@@ -106,7 +106,7 @@ def lambda_return(reward, value, length, discount, lambda_):
             tf.scan(lambda agg, cur: cur[0] + cur[1] * agg,
                     tf.transpose(tf.reverse(sequence, [1]), [1, 2, 0]), tf.zeros_like(value[:, -1]),
                     1, False), [1, 0]), [1])
-    return tf.check_numerics(tf.stop_gradient(return_), 'return')
+    return tf.debugging.check_numerics(tf.stop_gradient(return_), 'return')
 
 
 def lambda_advantage(reward, value, length, discount):
@@ -120,7 +120,7 @@ def lambda_advantage(reward, value, length, discount):
             tf.scan(lambda agg, cur: cur + discount * agg,
                     tf.transpose(tf.reverse(mask * delta, [1]), [1, 0]), tf.zeros_like(delta[:, -1]),
                     1, False), [1, 0]), [1])
-    return tf.check_numerics(tf.stop_gradient(advantage), 'advantage')
+    return tf.debugging.check_numerics(tf.stop_gradient(advantage), 'advantage')
 
 
 def diag_normal_kl(mean0, logstd0, mean1, logstd1):
@@ -174,13 +174,13 @@ def gradient_summaries(grad_vars, groups=None, scope='gradients'):
                 grouped[name].append(grad)
     for name in groups:
         if name not in grouped:
-            tf.logging.warn("No variables matching '{}' group.".format(name))
+            tf.compat.v1.logging.warn("No variables matching '{}' group.".format(name))
     summaries = []
     for name, grads in grouped.items():
         grads = [tf.reshape(grad, [-1]) for grad in grads]
         grads = tf.concat(grads, 0)
-        summaries.append(tf.summary.histogram(scope + '/' + name, grads))
-    return tf.summary.merge(summaries)
+        summaries.append(tf.compat.v1.summary.histogram(scope + '/' + name, grads))
+    return tf.compat.v1.summary.merge(summaries)
 
 
 def variable_summaries(vars_, groups=None, scope='weights'):
@@ -205,10 +205,10 @@ def variable_summaries(vars_, groups=None, scope='weights'):
                 grouped[name].append(var)
     for name in groups:
         if name not in grouped:
-            tf.logging.warn("No variables matching '{}' group.".format(name))
+            tf.compat.v1.logging.warn("No variables matching '{}' group.".format(name))
     summaries = []
     for name, vars_ in grouped.items():
         vars_ = [tf.reshape(var, [-1]) for var in vars_]
         vars_ = tf.concat(vars_, 0)
-        summaries.append(tf.summary.histogram(scope + '/' + name, vars_))
-    return tf.summary.merge(summaries)
+        summaries.append(tf.compat.v1.summary.histogram(scope + '/' + name, vars_))
+    return tf.compat.v1.summary.merge(summaries)

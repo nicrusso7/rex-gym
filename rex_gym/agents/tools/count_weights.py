@@ -31,8 +31,8 @@ def count_weights(scope=None, exclude=None, graph=None):
   """
     if scope:
         scope = scope if scope.endswith('/') else scope + '/'
-    graph = graph or tf.get_default_graph()
-    vars_ = graph.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)
+    graph = graph or tf.compat.v1.get_default_graph()
+    vars_ = graph.get_collection(tf.compat.v1.GraphKeys.TRAINABLE_VARIABLES)
     if scope:
         vars_ = [var for var in vars_ if var.name.startswith(scope)]
     if exclude:

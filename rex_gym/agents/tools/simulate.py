@@ -48,8 +48,8 @@ def simulate(batch_env, algo, log=True, reset=False):
         zero_durations = tf.zeros_like(agent_indices)
         reset_ops = [
             batch_env.reset(agent_indices),
-            tf.scatter_update(score, agent_indices, zero_scores),
-            tf.scatter_update(length, agent_indices, zero_durations)
+            tf.compat.v1.scatter_update(score, agent_indices, zero_scores),
+            tf.compat.v1.scatter_update(length, agent_indices, zero_durations)
         ]
         with tf.control_dependencies(reset_ops):
             return algo.begin_episode(agent_indices)
@@ -73,7 +73,7 @@ def simulate(batch_env, algo, log=True, reset=False):
         with tf.control_dependencies([add_score, inc_length]):
             experience_summary = algo.experience(prevob, batch_env.action, batch_env.reward,
                                                  batch_env.done, batch_env.observ)
-        return tf.summary.merge([step_summary, experience_summary])
+        return tf.compat.v1.summary.merge([step_summary, experience_summary])
 
     def _define_end_episode(agent_indices):
         """Notify the algorithm of ending episodes.
@@ -99,17 +99,17 @@ def simulate(batch_env, algo, log=True, reset=False):
       Summary string.
     """
         score_summary = tf.cond(tf.logical_and(log, tf.cast(
-            mean_score.count, tf.bool)), lambda: tf.summary.scalar('mean_score', mean_score.clear()),
+            mean_score.count, tf.bool)), lambda: tf.compat.v1.summary.scalar('mean_score', mean_score.clear()),
                                 str)
         length_summary = tf.cond(tf.logical_and(
             log, tf.cast(mean_length.count,
-                         tf.bool)), lambda: tf.summary.scalar('mean_length', mean_length.clear()), str)
-        return tf.summary.merge([score_summary, length_summary])
+                         tf.bool)), lambda: tf.compat.v1.summary.scalar('mean_length', mean_length.clear()), str)
+        return tf.compat.v1.summary.merge([score_summary, length_summary])
 
     with tf.name_scope('simulate'):
         log = tf.convert_to_tensor(log)
         reset = tf.convert_to_tensor(reset)
-        with tf.variable_scope('simulate_temporary'):
+        with tf.compat.v1.variable_scope('simulate_temporary'):
             score = tf.Variable(tf.zeros(len(batch_env), dtype=tf.float32), False, name='score')
             length = tf.Variable(tf.zeros(len(batch_env), dtype=tf.int32), False, name='length')
         mean_score = streaming_mean.StreamingMean((), tf.float32)
@@ -125,7 +125,7 @@ def simulate(batch_env, algo, log=True, reset=False):
             end_episode = tf.cond(tf.cast(tf.shape(agent_indices)[0],
                                           tf.bool), lambda: _define_end_episode(agent_indices), str)
         with tf.control_dependencies([end_episode]):
-            summary = tf.summary.merge([_define_summaries(), begin_episode, step, end_episode])
+            summary = tf.compat.v1.summary.merge([_define_summaries(), begin_episode, step, end_episode])
         with tf.control_dependencies([summary]):
             done, score = tf.identity(batch_env.done), tf.identity(score)
         return done, score, summary

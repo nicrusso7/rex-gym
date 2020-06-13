@@ -19,6 +19,7 @@ https://github.com/joschu/modular_rl/blob/master/modular_rl/ppo.py
 import collections
 
 import tensorflow as tf
+import tensorflow_probability as tfp
 
 from . import memory
 from . import normalize
@@ -67,7 +68,7 @@ class PPOAlgorithm(object):
                           tf.ones(len(self._batch_env)),
                           reuse=None)
             cell = self._config.network(self._batch_env.action.shape[1].value)
-            with tf.variable_scope('ppo_temporary'):
+            with tf.compat.v1.variable_scope('ppo_temporary'):
                 self._episodes = memory.EpisodeMemory(template, len(batch_env), config.max_length,
                                                       'episodes')
                 self._last_state = utility.create_nested_vars(cell.zero_state(len(batch_env), tf.float32))
@@ -117,11 +118,11 @@ class PPOAlgorithm(object):
             logprob = network.policy.log_prob(action)[:, 0]
             # pylint: disable=g-long-lambda
             summary = tf.cond(
-                self._should_log, lambda: tf.summary.merge([
-                    tf.summary.histogram('mean', network.mean[:, 0]),
-                    tf.summary.histogram('std', tf.exp(network.logstd[:, 0])),
-                    tf.summary.histogram('action', action[:, 0]),
-                    tf.summary.histogram('logprob', logprob)
+                self._should_log, lambda: tf.compat.v1.summary.merge([
+                    tf.compat.v1.summary.histogram('mean', network.mean[:, 0]),
+                    tf.compat.v1.summary.histogram('std', tf.exp(network.logstd[:, 0])),
+                    tf.compat.v1.summary.histogram('action', action[:, 0]),
+                    tf.compat.v1.summary.histogram('logprob', logprob)
                 ]), str)
             # Remember current policy to append to memory in the experience callback.
             with tf.control_dependencies([
@@ -130,7 +131,7 @@ class PPOAlgorithm(object):
                 self._last_mean.assign(network.mean[:, 0]),
                 self._last_logstd.assign(network.logstd[:, 0])
             ]):
-                return tf.check_numerics(action[:, 0], 'action'), tf.identity(summary)
+                return tf.debugging.check_numerics(action[:, 0], 'action'), tf.identity(summary)
 
     def experience(self, observ, action, reward, unused_done, unused_nextob):
         """Process the transition tuple of the current step.
@@ -155,7 +156,7 @@ class PPOAlgorithm(object):
 
     def _define_experience(self, observ, action, reward):
         """Implement the branch of experience() entered during training."""
-        update_filters = tf.summary.merge(
+        update_filters = tf.compat.v1.summary.merge(
             [self._observ_filter.update(observ),
              self._reward_filter.update(reward)])
         with tf.control_dependencies([update_filters]):
@@ -169,14 +170,14 @@ class PPOAlgorithm(object):
             norm_reward = tf.reduce_mean(self._reward_filter.transform(reward))
             # pylint: disable=g-long-lambda
             summary = tf.cond(
-                self._should_log, lambda: tf.summary.merge([
+                self._should_log, lambda: tf.compat.v1.summary.merge([
                     update_filters,
                     self._observ_filter.summary(),
                     self._reward_filter.summary(),
-                    tf.summary.scalar('memory_size', self._memory_index),
-                    tf.summary.histogram('normalized_observ', norm_observ),
-                    tf.summary.histogram('action', self._last_action),
-                    tf.summary.scalar('normalized_reward', norm_reward)
+                    tf.compat.v1.summary.scalar('memory_size', self._memory_index),
+                    tf.compat.v1.summary.histogram('normalized_observ', norm_observ),
+                    tf.compat.v1.summary.histogram('action', self._last_action),
+                    tf.compat.v1.summary.scalar('normalized_reward', norm_reward)
                 ]), str)
             return summary
 
@@ -221,11 +222,11 @@ class PPOAlgorithm(object):
           Summary tensor.
         """
         with tf.name_scope('training'):
-            assert_full = tf.assert_equal(self._memory_index, self._config.update_every)
+            assert_full = tf.compat.v1.assert_equal(self._memory_index, self._config.update_every)
             with tf.control_dependencies([assert_full]):
                 data = self._memory.data()
             (observ, action, old_mean, old_logstd, reward), length = data
-            with tf.control_dependencies([tf.assert_greater(length, 0)]):
+            with tf.control_dependencies([tf.compat.v1.assert_greater(length, 0)]):
                 length = tf.identity(length)
             observ = self._observ_filter.transform(observ)
             reward = self._reward_filter.transform(reward)
@@ -237,9 +238,9 @@ class PPOAlgorithm(object):
             with tf.control_dependencies([penalty_summary]):
                 clear_memory = tf.group(self._memory.clear(), self._memory_index.assign(0))
             with tf.control_dependencies([clear_memory]):
-                weight_summary = utility.variable_summaries(tf.trainable_variables(),
+                weight_summary = utility.variable_summaries(tf.compat.v1.trainable_variables(),
                                                             self._config.weight_summaries)
-                return tf.summary.merge([policy_summary, value_summary, penalty_summary, weight_summary])
+                return tf.compat.v1.summary.merge([policy_summary, value_summary, penalty_summary, weight_summary])
 
     def _update_value(self, observ, reward, length):
         """Perform multiple update steps of the value baseline.
@@ -277,9 +278,9 @@ class PPOAlgorithm(object):
         loss, summary = self._value_loss(observ, reward, length)
         gradients, variables = (zip(*self._value_optimizer.compute_gradients(loss)))
         optimize = self._value_optimizer.apply_gradients(zip(gradients, variables))
-        summary = tf.summary.merge([
+        summary = tf.compat.v1.summary.merge([
             summary,
-            tf.summary.scalar('gradient_norm', tf.global_norm(gradients)),
+            tf.compat.v1.summary.scalar('gradient_norm', tf.linalg.global_norm(gradients)),
             utility.gradient_summaries(zip(gradients, variables), dict(value=r'.*'))
         ])
         with tf.control_dependencies([optimize]):
@@ -303,13 +304,13 @@ class PPOAlgorithm(object):
             value = self._network(observ, length).value
             return_ = utility.discounted_return(reward, length, self._config.discount)
             advantage = return_ - value
-            value_loss = 0.5 * self._mask(advantage**2, length)
-            summary = tf.summary.merge([
-                tf.summary.histogram('value_loss', value_loss),
-                tf.summary.scalar('avg_value_loss', tf.reduce_mean(value_loss))
+            value_loss = 0.5 * self._mask(advantage ** 2, length)
+            summary = tf.compat.v1.summary.merge([
+                tf.compat.v1.summary.histogram('value_loss', value_loss),
+                tf.compat.v1.summary.scalar('avg_value_loss', tf.reduce_mean(value_loss))
             ])
             value_loss = tf.reduce_mean(value_loss)
-            return tf.check_numerics(value_loss, 'value_loss'), summary
+            return tf.debugging.check_numerics(value_loss, 'value_loss'), summary
 
     def _update_policy(self, observ, action, old_mean, old_logstd, reward, length):
         """Perform multiple update steps of the policy.
@@ -370,9 +371,9 @@ class PPOAlgorithm(object):
                                           advantage, length)
         gradients, variables = (zip(*self._policy_optimizer.compute_gradients(loss)))
         optimize = self._policy_optimizer.apply_gradients(zip(gradients, variables))
-        summary = tf.summary.merge([
+        summary = tf.compat.v1.summary.merge([
             summary,
-            tf.summary.scalar('gradient_norm', tf.global_norm(gradients)),
+            tf.compat.v1.summary.scalar('gradient_norm', tf.linalg.global_norm(gradients)),
             utility.gradient_summaries(zip(gradients, variables), dict(policy=r'.*'))
         ])
         with tf.control_dependencies([optimize]):
@@ -415,22 +416,22 @@ class PPOAlgorithm(object):
             with tf.control_dependencies(
                     [tf.cond(cutoff_count > 0, lambda: tf.Print(0, [cutoff_count], 'kl cutoff! '), int)]):
                 kl_cutoff = (self._config.kl_cutoff_coef * tf.cast(kl > cutoff_threshold, tf.float32) *
-                             (kl - cutoff_threshold)**2)
+                             (kl - cutoff_threshold) ** 2)
             policy_loss = surrogate_loss + kl_penalty + kl_cutoff
-            summary = tf.summary.merge([
-                tf.summary.histogram('entropy', entropy),
-                tf.summary.histogram('kl', kl),
-                tf.summary.histogram('surrogate_loss', surrogate_loss),
-                tf.summary.histogram('kl_penalty', kl_penalty),
-                tf.summary.histogram('kl_cutoff', kl_cutoff),
-                tf.summary.histogram('kl_penalty_combined', kl_penalty + kl_cutoff),
-                tf.summary.histogram('policy_loss', policy_loss),
-                tf.summary.scalar('avg_surr_loss', tf.reduce_mean(surrogate_loss)),
-                tf.summary.scalar('avg_kl_penalty', tf.reduce_mean(kl_penalty)),
-                tf.summary.scalar('avg_policy_loss', tf.reduce_mean(policy_loss))
+            summary = tf.compat.v1.summary.merge([
+                tf.compat.v1.summary.histogram('entropy', entropy),
+                tf.compat.v1.summary.histogram('kl', kl),
+                tf.compat.v1.summary.histogram('surrogate_loss', surrogate_loss),
+                tf.compat.v1.summary.histogram('kl_penalty', kl_penalty),
+                tf.compat.v1.summary.histogram('kl_cutoff', kl_cutoff),
+                tf.compat.v1.summary.histogram('kl_penalty_combined', kl_penalty + kl_cutoff),
+                tf.compat.v1.summary.histogram('policy_loss', policy_loss),
+                tf.compat.v1.summary.scalar('avg_surr_loss', tf.reduce_mean(surrogate_loss)),
+                tf.compat.v1.summary.scalar('avg_kl_penalty', tf.reduce_mean(kl_penalty)),
+                tf.compat.v1.summary.scalar('avg_policy_loss', tf.reduce_mean(policy_loss))
             ])
             policy_loss = tf.reduce_mean(policy_loss, 0)
-            return tf.check_numerics(policy_loss, 'policy_loss'), summary
+            return tf.debugging.check_numerics(policy_loss, 'policy_loss'), summary
 
     def _adjust_penalty(self, observ, old_mean, old_logstd, length):
         """Adjust the KL policy between the behavioral and current policy.
@@ -450,9 +451,9 @@ class PPOAlgorithm(object):
         """
         with tf.name_scope('adjust_penalty'):
             network = self._network(observ, length)
-            assert_change = tf.assert_equal(tf.reduce_all(tf.equal(network.mean, old_mean)),
-                                            False,
-                                            message='policy should change')
+            assert_change = tf.compat.v1.assert_equal(tf.reduce_all(tf.equal(network.mean, old_mean)),
+                                                      False,
+                                                      message='policy should change')
             print_penalty = tf.Print(0, [self._penalty], 'current penalty: ')
             with tf.control_dependencies([assert_change, print_penalty]):
                 kl_change = tf.reduce_mean(
@@ -470,9 +471,9 @@ class PPOAlgorithm(object):
                     lambda: tf.Print(self._penalty.assign(self._penalty / 1.5), [0], 'decrease penalty '),
                     float)
             with tf.control_dependencies([maybe_increase, maybe_decrease]):
-                return tf.summary.merge([
-                    tf.summary.scalar('kl_change', kl_change),
-                    tf.summary.scalar('penalty', self._penalty)
+                return tf.compat.v1.summary.merge([
+                    tf.compat.v1.summary.scalar('kl_change', kl_change),
+                    tf.compat.v1.summary.scalar('penalty', self._penalty)
                 ])
 
     def _mask(self, tensor, length):
@@ -491,7 +492,7 @@ class PPOAlgorithm(object):
             range_ = tf.range(tensor.shape[1].value)
             mask = tf.cast(range_[None, :] < length[:, None], tf.float32)
             masked = tensor * mask
-            return tf.check_numerics(masked, 'masked')
+            return tf.debugging.check_numerics(masked, 'masked')
 
     def _network(self, observ, length=None, state=None, reuse=True):
         """Compute the network output for a batched sequence of observations.
@@ -511,11 +512,11 @@ class PPOAlgorithm(object):
         Returns:
           NetworkOutput tuple.
         """
-        with tf.variable_scope('network', reuse=reuse):
+        with tf.compat.v1.variable_scope('network', reuse=reuse):
             observ = tf.convert_to_tensor(observ)
             use_gpu = self._config.use_gpu and utility.available_gpus()
             with tf.device('/gpu:0' if use_gpu else '/cpu:0'):
-                observ = tf.check_numerics(observ, 'observ')
+                observ = tf.debugging.check_numerics(observ, 'observ')
                 cell = self._config.network(self._batch_env.action.shape[1].value)
                 (mean, logstd, value), state = tf.nn.dynamic_rnn(cell,
                                                                  observ,
@@ -523,8 +524,8 @@ class PPOAlgorithm(object):
                                                                  state,
                                                                  tf.float32,
                                                                  swap_memory=True)
-            mean = tf.check_numerics(mean, 'mean')
-            logstd = tf.check_numerics(logstd, 'logstd')
-            value = tf.check_numerics(value, 'value')
-            policy = tf.contrib.distributions.MultivariateNormalDiag(mean, tf.exp(logstd))
+            mean = tf.debugging.check_numerics(mean, 'mean')
+            logstd = tf.debugging.check_numerics(logstd, 'logstd')
+            value = tf.debugging.check_numerics(value, 'value')
+            policy = tfp.distributions.MultivariateNormalDiag(mean, tf.exp(logstd))
             return _NetworkOutput(policy, mean, logstd, value, state)

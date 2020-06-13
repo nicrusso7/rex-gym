@@ -4,7 +4,7 @@ import os
 import site
 import time
 
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 from rex_gym.agents.scripts import utility
 from rex_gym.agents.ppo import simple_ppo_agent
 from rex_gym.util import action_mapper

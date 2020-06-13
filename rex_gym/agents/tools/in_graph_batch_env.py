@@ -35,7 +35,7 @@ class InGraphBatchEnv(object):
         observ_dtype = self._parse_dtype(self._batch_env.observation_space)
         action_shape = self._parse_shape(self._batch_env.action_space)
         action_dtype = self._parse_dtype(self._batch_env.action_space)
-        with tf.variable_scope('env_temporary'):
+        with tf.compat.v1.variable_scope('env_temporary'):
             self._observ = tf.Variable(tf.zeros((len(self._batch_env),) + observ_shape, observ_dtype),
                                        name='observ',
                                        trainable=False)
@@ -81,13 +81,13 @@ class InGraphBatchEnv(object):
     """
         with tf.name_scope('environment/simulate'):
             if action.dtype in (tf.float16, tf.float32, tf.float64):
-                action = tf.check_numerics(action, 'action')
+                action = tf.debugging.check_numerics(action, 'action')
             observ_dtype = self._parse_dtype(self._batch_env.observation_space)
-            observ, reward, done = tf.py_func(lambda a: self._batch_env.step(a)[:3], [action],
-                                              [observ_dtype, tf.float32, tf.bool],
-                                              name='step')
-            observ = tf.check_numerics(observ, 'observ')
-            reward = tf.check_numerics(reward, 'reward')
+            observ, reward, done = tf.numpy_function(lambda a: self._batch_env.step(a)[:3], [action],
+                                                     [observ_dtype, tf.float32, tf.bool],
+                                                     name='step')
+            observ = tf.debugging.check_numerics(observ, 'observ')
+            reward = tf.debugging.check_numerics(reward, 'reward')
             return tf.group(self._observ.assign(observ), self._action.assign(action),
                             self._reward.assign(reward), self._done.assign(done))
 
@@ -103,14 +103,14 @@ class InGraphBatchEnv(object):
         if indices is None:
             indices = tf.range(len(self._batch_env))
         observ_dtype = self._parse_dtype(self._batch_env.observation_space)
-        observ = tf.py_func(self._batch_env.reset, [indices], observ_dtype, name='reset')
-        observ = tf.check_numerics(observ, 'observ')
+        observ = tf.numpy_function(self._batch_env.reset, [indices], observ_dtype, name='reset')
+        observ = tf.debugging.check_numerics(observ, 'observ')
         reward = tf.zeros_like(indices, tf.float32)
         done = tf.zeros_like(indices, tf.bool)
         with tf.control_dependencies([
-            tf.scatter_update(self._observ, indices, observ),
-            tf.scatter_update(self._reward, indices, reward),
-            tf.scatter_update(self._done, indices, done)
+            tf.compat.v1.scatter_update(self._observ, indices, observ),
+            tf.compat.v1.scatter_update(self._reward, indices, reward),
+            tf.compat.v1.scatter_update(self._done, indices, done)
         ]):
             return tf.identity(observ)
 

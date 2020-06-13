@@ -68,7 +68,7 @@ class StreamingNormalize(object):
             # Remove batch dimension if necessary.
             if no_batch_dim:
                 value = value[0]
-            return tf.check_numerics(value, 'value')
+            return tf.debugging.check_numerics(value, 'value')
 
     def update(self, value):
         """Update the mean and variance estimates.
@@ -119,7 +119,7 @@ class StreamingNormalize(object):
         with tf.name_scope(self._name + '/summary'):
             mean_summary = tf.cond(self._count > 0, lambda: self._summary('mean', self._mean), str)
             std_summary = tf.cond(self._count > 1, lambda: self._summary('stddev', self._std()), str)
-            return tf.summary.merge([mean_summary, std_summary])
+            return tf.compat.v1.summary.merge([mean_summary, std_summary])
 
     def _std(self):
         """Computes the current estimate of the standard deviation.
@@ -148,6 +148,6 @@ class StreamingNormalize(object):
           Summary tensor.
         """
         if tensor.shape.ndims == 0:
-            return tf.summary.scalar(name, tensor)
+            return tf.compat.v1.summary.scalar(name, tensor)
         else:
-            return tf.summary.histogram(name, tensor)
+            return tf.compat.v1.summary.histogram(name, tensor)

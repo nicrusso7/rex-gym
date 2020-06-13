@@ -19,7 +19,7 @@ class SimplePPOPolicy(object):
         self.sess = sess
         observation_size = len(env.observation_space.low)
         action_size = len(env.action_space.low)
-        self.observation_placeholder = tf.placeholder(tf.float32, [None, observation_size],
+        self.observation_placeholder = tf.compat.v1.placeholder(tf.float32, [None, observation_size],
                                                       name="Input")
         self._observ_filter = normalize.StreamingNormalize(self.observation_placeholder[0],
                                                            center=True,
@@ -45,16 +45,16 @@ class SimplePPOPolicy(object):
       checkpoint: The checkpoint path.
     """
         observ = self._observ_filter.transform(self.observation_placeholder)
-        with tf.variable_scope("network/rnn"):
+        with tf.compat.v1.variable_scope("network/rnn"):
             self.network = network(policy_layers=policy_layers,
                                    value_layers=value_layers,
                                    action_size=action_size)
 
-        with tf.variable_scope("temporary"):
+        with tf.compat.v1.variable_scope("temporary"):
             self.last_state = tf.Variable(self.network.zero_state(1, tf.float32), False)
             self.sess.run(self.last_state.initializer)
 
-        with tf.variable_scope("network"):
+        with tf.compat.v1.variable_scope("network"):
             (mean_action, _, _), new_state = tf.nn.dynamic_rnn(self.network,
                                                                observ[:, None],
                                                                tf.ones(1),

@@ -15,6 +15,7 @@
 import logging
 import os
 import re
+import warnings
 
 import ruamel.yaml as yaml
 import tensorflow as tf
@@ -25,6 +26,9 @@ from rex_gym.agents.tools.batch_env import BatchEnv
 from rex_gym.agents.tools.count_weights import count_weights
 from rex_gym.agents.tools.in_graph_batch_env import InGraphBatchEnv
 from rex_gym.agents.tools.simulate import simulate
+
+warnings.simplefilter('ignore', yaml.error.UnsafeLoaderWarning)
+warnings.simplefilter('ignore', yaml.error.ReusedAnchorWarning)
 
 
 def define_simulation_graph(batch_env, algo_cls, config):
@@ -39,14 +43,14 @@ def define_simulation_graph(batch_env, algo_cls, config):
     Object providing graph elements via attributes.
   """
     step = tf.Variable(0, False, dtype=tf.int32, name='global_step')
-    is_training = tf.placeholder(tf.bool, name='is_training')
-    should_log = tf.placeholder(tf.bool, name='should_log')
-    do_report = tf.placeholder(tf.bool, name='do_report')
-    force_reset = tf.placeholder(tf.bool, name='force_reset')
+    is_training = tf.compat.v1.placeholder(tf.bool, name='is_training')
+    should_log = tf.compat.v1.placeholder(tf.bool, name='should_log')
+    do_report = tf.compat.v1.placeholder(tf.bool, name='do_report')
+    force_reset = tf.compat.v1.placeholder(tf.bool, name='force_reset')
     algo = algo_cls(batch_env, step, is_training, should_log, config)
     done, score, summary = simulate(batch_env, algo, should_log, force_reset)
     message = 'Graph contains {} trainable variables.'
-    tf.logging.info(message.format(count_weights()))
+    tf.compat.v1.logging.info(message.format(count_weights()))
     return AttrDict(locals())
 
 
@@ -61,7 +65,7 @@ def define_batch_env(constructor, num_agents, env_processes):
   Returns:
     In-graph environments object.
   """
-    with tf.variable_scope('environments'):
+    with tf.compat.v1.variable_scope('environments'):
         if env_processes:
             envs = [wrappers.ExternalProcess(constructor) for _ in range(num_agents)]
         else:
@@ -83,11 +87,11 @@ def define_saver(exclude=None):
     variables = []
     exclude = exclude or []
     exclude = [re.compile(regex) for regex in exclude]
-    for variable in tf.global_variables():
+    for variable in tf.compat.v1.global_variables():
         if any(regex.match(variable.name) for regex in exclude):
             continue
         variables.append(variable)
-    saver = tf.train.Saver(variables, keep_checkpoint_every_n_hours=5)
+    saver = tf.compat.v1.train.Saver(variables, keep_checkpoint_every_n_hours=5)
     return saver
 
 
@@ -127,7 +131,7 @@ def initialize_variables(sess, saver, logdir, checkpoint=None, resume=None):
     ValueError: If resume expected but no log directory specified.
     RuntimeError: If no resume expected but a checkpoint was found.
   """
-    sess.run(tf.group(tf.local_variables_initializer(), tf.global_variables_initializer()))
+    sess.run(tf.group(tf.compat.v1.local_variables_initializer(), tf.compat.v1.global_variables_initializer()))
     if resume and not (logdir or checkpoint):
         raise ValueError('Need to specify logdir to resume a checkpoint.')
     if logdir:
@@ -160,10 +164,10 @@ def save_config(config, logdir=None):
         with config.unlocked:
             config.logdir = logdir
         message = 'Start a new run and write summaries and checkpoints to {}.'
-        tf.logging.info(message.format(config.logdir))
-        tf.gfile.MakeDirs(config.logdir)
+        tf.compat.v1.logging.info(message.format(config.logdir))
+        tf.io.gfile.makedirs(config.logdir)
         config_path = os.path.join(config.logdir, 'config.yaml')
-        with tf.gfile.GFile(config_path, 'w') as file_:
+        with tf.io.gfile.GFile(config_path, 'w') as file_:
             yaml.dump(config, file_, default_flow_style=False)
     else:
         message = ('Start a new run without storing summaries and checkpoints since no '
@@ -185,18 +189,18 @@ def load_config(logdir):
     Configuration object.
   """
     config_path = logdir and os.path.join(logdir, 'config.yaml')
-    if not config_path or not tf.gfile.Exists(config_path):
+    if not config_path or not tf.io.gfile.exists(config_path):
         message = ('Cannot resume an existing run since the logging directory does not '
                    'contain a configuration file.')
         raise IOError(message)
-    with tf.gfile.FastGFile(config_path, 'r') as file_:
+    with tf.io.gfile.GFile(config_path, 'r') as file_:
         config = yaml.load(file_)
     message = 'Resume run and write summaries and checkpoints to {}.'
-    tf.logging.info(message.format(config.logdir))
+    tf.compat.v1.logging.info(message.format(config.logdir))
     return config
 
 
 def set_up_logging():
     """Configure the TensorFlow logger."""
-    tf.logging.set_verbosity(tf.logging.INFO)
+    tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.INFO)
     logging.getLogger('tensorflow').propagate = False

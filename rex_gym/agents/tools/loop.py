@@ -94,8 +94,8 @@ class Loop(object):
         feed = feed or {}
         if done.shape.ndims is None or score.shape.ndims is None:
             raise ValueError("Rank of 'done' and 'score' tensors must be known.")
-        writer = self._logdir and tf.summary.FileWriter(
-            os.path.join(self._logdir, name), tf.get_default_graph(), flush_secs=60)
+        writer = self._logdir and tf.compat.v1.summary.FileWriter(
+            os.path.join(self._logdir, name), tf.compat.v1.get_default_graph(), flush_secs=60)
         op = self._define_step(done, score, summary)
         batch = 1 if score.shape.ndims == 0 else score.shape[0].value
         self._phases.append(
@@ -127,7 +127,7 @@ class Loop(object):
             if steps_in % phase.steps < steps_made:
                 message = '\n' + ('-' * 50) + '\n'
                 message += 'Phase {} (phase step {}, global step {}).'
-                tf.logging.info(message.format(phase.name, phase_step, global_step))
+                tf.compat.v1.logging.info(message.format(phase.name, phase_step, global_step))
             # Populate book keeping tensors.
             phase.feed[self._reset] = (steps_in < steps_made)
             phase.feed[self._log] = (phase.writer and

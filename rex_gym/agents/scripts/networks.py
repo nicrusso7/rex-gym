@@ -92,7 +92,7 @@ class ForwardGaussianPolicy(tf.contrib.rnn.RNNCell):
         return self._action_size, self._action_size, tf.TensorShape([])
 
     def __call__(self, observation, state):
-        with tf.variable_scope('policy'):
+        with tf.compat.v1.variable_scope('policy'):
             x = tf.contrib.layers.flatten(observation)
             for size in self._policy_layers:
                 x = tf.contrib.layers.fully_connected(x, size, tf.nn.relu)
@@ -100,9 +100,9 @@ class ForwardGaussianPolicy(tf.contrib.rnn.RNNCell):
                                                      self._action_size,
                                                      tf.tanh,
                                                      weights_initializer=self._mean_weights_initializer)
-            logstd = tf.get_variable('logstd', mean.shape[1:], tf.float32, self._logstd_initializer)
+            logstd = tf.compat.v1.get_variable('logstd', mean.shape[1:], tf.float32, self._logstd_initializer)
             logstd = tf.tile(logstd[None, ...], [tf.shape(mean)[0]] + [1] * logstd.shape.ndims)
-        with tf.variable_scope('value'):
+        with tf.compat.v1.variable_scope('value'):
             x = tf.contrib.layers.flatten(observation)
             for size in self._value_layers:
                 x = tf.contrib.layers.fully_connected(x, size, tf.nn.relu)
