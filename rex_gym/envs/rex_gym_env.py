@@ -244,6 +244,7 @@ class RexGymEnv(gym.Env):
         self._env_randomizers.append(env_randomizer)
 
     def reset(self, initial_motor_angles=None, reset_duration=1.0):
+        self.env_goal_reached = False
         self._pybullet_client.configureDebugVisualizer(self._pybullet_client.COV_ENABLE_RENDERING, 0)
         # @TODO fix logger
         # if self._env_step_counter > 0:

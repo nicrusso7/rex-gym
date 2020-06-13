@@ -103,6 +103,7 @@ class RexTurnEnv(rex_gym_env.RexGymEnv):
             self._cam_pitch = 0
 
     def reset(self):
+        self.termination_time = []
         self.goal_reached = False
         super(RexTurnEnv, self).reset()
         if self._target_orient is None or self._random_orient_target:
@@ -186,13 +187,17 @@ class RexTurnEnv(rex_gym_env.RexGymEnv):
         motor_pose = np.zeros(NUM_MOTORS)
         for i in range(NUM_LEGS):
             if self.goal_reached:
-                # self.env_goal_reached = True
+                self._terminate_with_delay(t)
                 return self.rex.initial_pose
             else:
                 motor_pose[3 * i] = leg_pose[3 * i]
                 motor_pose[3 * i + 1] = leg_pose[3 * i + 1]
                 motor_pose[3 * i + 2] = leg_pose[3 * i + 2]
         return motor_pose
+
+    def _terminate_with_delay(self, current_t):
+        if current_t - self.termination_time[0] >= 2:
+            self.env_goal_reached = True
 
     def _transform_action_to_motor_command(self, action):
         t = self.rex.GetTimeSinceReset()
@@ -248,6 +253,7 @@ class RexTurnEnv(rex_gym_env.RexGymEnv):
             position_reward = -position_reward
 
         if is_pos and is_oriented:
+            self.termination_time.append(self.rex.GetTimeSinceReset())
             self.goal_reached = True
 
         reward = position_reward + proximity_reward
