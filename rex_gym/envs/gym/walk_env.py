@@ -2,15 +2,16 @@
 
 """
 import math
+import random
 
 from gym import spaces
 import numpy as np
 from .. import rex_gym_env
+from ...model.rex import Rex
 
 DESIRED_PITCH = 0
 NUM_LEGS = 4
 NUM_MOTORS = 3 * NUM_LEGS
-STEP_PERIOD = 1.0 / 4.5
 
 
 class RexWalkEnv(rex_gym_env.RexGymEnv):
@@ -38,7 +39,8 @@ class RexWalkEnv(rex_gym_env.RexGymEnv):
                  render=False,
                  num_steps_to_log=1000,
                  env_randomizer=None,
-                 log_path=None):
+                 log_path=None,
+                 target_position=None):
         """Initialize the rex alternating legs gym environment.
 
     Args:
@@ -83,23 +85,43 @@ class RexWalkEnv(rex_gym_env.RexGymEnv):
                              env_randomizer=env_randomizer,
                              log_path=log_path,
                              control_time_step=control_time_step,
-                             action_repeat=action_repeat)
+                             action_repeat=action_repeat,
+                             target_position=target_position)
 
         action_dim = 12
-        action_high = np.array([0.1] * action_dim)
+        action_high = np.array([0.01] * action_dim)
         self.action_space = spaces.Box(-action_high, action_high)
         self._cam_dist = 1.0
         self._cam_yaw = 30
         self._cam_pitch = -30
+        self._target_position = target_position
+        self.goal_reached = False
+        self.period = 1.0 / 4.5
 
     def reset(self):
-        self.desired_pitch = DESIRED_PITCH
         super(RexWalkEnv, self).reset()
+        self.goal_reached = False
+        if not self._target_position or self._random_pos_target:
+            self._target_position = random.uniform(0.9, 3)
+            self._random_pos_target = True
+        print(f"Target Position x={self._target_position}, Random assignment: {self._random_pos_target}")
         return self._get_observation()
 
-    @staticmethod
-    def _convert_from_leg_model(leg_pose):
+    def break_gait(self):
+        current_x = -self.rex.GetBasePosition()[0]
+        if self._target_position - 0.0 > current_x >= self._target_position - 1:
+            # slow down
+            action_high = np.array([0.0] * 12)
+        else:
+            return True
+        self.action_space = spaces.Box(-action_high, action_high)
+        return False
+
+    def _convert_from_leg_model(self, leg_pose):
         motor_pose = np.zeros(NUM_MOTORS)
+        if self.goal_reached:
+            if self.break_gait():
+                return self.rex.initial_pose
         for i in range(NUM_LEGS):
             if i % 2 == 0:
                 motor_pose[3 * i] = 0.1
@@ -109,9 +131,15 @@ class RexWalkEnv(rex_gym_env.RexGymEnv):
             motor_pose[3 * i + 2] = leg_pose[3 * i + 2]
         return motor_pose
 
+    def _check_target_position(self):
+        # walking on negative axis
+        current_x = -self.rex.GetBasePosition()[0]
+        if current_x >= self._target_position - 1:
+            self.goal_reached = True
+
     def _signal(self, t):
         initial_pose = self.rex.initial_pose
-        period = STEP_PERIOD
+        period = self.period
         l_extension = 0.2 * math.cos(2 * math.pi / period * t)
         l_swing = -l_extension
         extension = 0.3 * math.cos(2 * math.pi / period * t)
@@ -127,6 +155,7 @@ class RexWalkEnv(rex_gym_env.RexGymEnv):
     def _transform_action_to_motor_command(self, action):
         action += self._signal(self.rex.GetTimeSinceReset())
         action = self._convert_from_leg_model(action)
+        self._check_target_position()
         return action
 
     def is_fallen(self):
@@ -156,7 +185,6 @@ class RexWalkEnv(rex_gym_env.RexGymEnv):
         roll, pitch, _ = self.rex.GetTrueBaseRollPitchYaw()
         roll_rate, pitch_rate, _ = self.rex.GetTrueBaseRollPitchYawRate()
         observation.extend([roll, pitch, roll_rate, pitch_rate])
-        observation[1] -= self.desired_pitch  # observation[1] is the pitch
         self._true_observation = np.array(observation)
         return self._true_observation
 
@@ -165,7 +193,6 @@ class RexWalkEnv(rex_gym_env.RexGymEnv):
         roll, pitch, _ = self.rex.GetBaseRollPitchYaw()
         roll_rate, pitch_rate, _ = self.rex.GetBaseRollPitchYawRate()
         observation.extend([roll, pitch, roll_rate, pitch_rate])
-        observation[1] -= self.desired_pitch  # observation[1] is the pitch
         self._observation = np.array(observation)
         return self._observation
 

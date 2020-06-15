@@ -47,7 +47,7 @@ rex-gym policy --env ENV_NAME
 | Environment | `env` flag | `arg` flag |
 | ----------- | ---------- | ---------- |
 | Galloping      | gallop | N.A |
-| Walking        | walk | N.A |
+| Walking        | walk | `target_position` |
 | Turn (on spot) | turn | `init_orient`, `target_orient` |
 | Stand up       | standup | N.A |
 
@@ -55,6 +55,7 @@ rex-gym policy --env ENV_NAME
 | ----- | ----------- |
 | init_orient | The starting orientation in rad. |
 | target_orient | The target orientation in rad. |
+| target_position | The target position (`x` axis). |
 
 | Flags | Description |
 | ----- | ----------- |

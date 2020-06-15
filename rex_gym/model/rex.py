@@ -442,7 +442,7 @@ class Rex(object):
         return roll_pitch_yaw
 
     def GetTrueMotorAngles(self):
-        """Gets the eight motor angles at the current moment, mapped to [-pi, pi].
+        """Gets the twelve motor angles at the current moment, mapped to [-pi, pi].
 
         Returns:
           Motor angles, mapped to [-pi, pi].
@@ -455,7 +455,7 @@ class Rex(object):
         return motor_angles
 
     def GetMotorAngles(self):
-        """Gets the eight motor angles.
+        """Gets the twelve motor angles.
 
         This function mimicks the noisy sensor reading and adds latency. The motor
         angles that are delayed, noise polluted, and mapped to [-pi, pi].

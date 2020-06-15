@@ -88,7 +88,7 @@ class RexTurnEnv(rex_gym_env.RexGymEnv):
             init_orient=init_orient)
 
         action_dim = 12
-        action_high = np.array([0.1] * action_dim)
+        action_high = np.array([0.05] * action_dim)
         self.action_space = spaces.Box(-action_high, action_high)
         self._cam_dist = 1.8
         self._cam_yaw = 30
@@ -99,6 +99,8 @@ class RexTurnEnv(rex_gym_env.RexGymEnv):
         self._random_orient_target = False
         self._random_orient_start = False
         self._cube = None
+        self.goal_reached = False
+        self.termination_time = []
         if self._on_rack:
             self._cam_pitch = 0
 
@@ -106,7 +108,7 @@ class RexTurnEnv(rex_gym_env.RexGymEnv):
         self.termination_time = []
         self.goal_reached = False
         super(RexTurnEnv, self).reset()
-        if self._target_orient is None or self._random_orient_target:
+        if not self._target_orient or self._random_orient_target:
             self._target_orient = random.uniform(0.2, 6)
             self._random_orient_target = True
 
@@ -196,7 +198,7 @@ class RexTurnEnv(rex_gym_env.RexGymEnv):
         return motor_pose
 
     def _terminate_with_delay(self, current_t):
-        if current_t - self.termination_time[0] >= 2:
+        if current_t - self.termination_time[0] >= 3:
             self.env_goal_reached = True
 
     def _transform_action_to_motor_command(self, action):

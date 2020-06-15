@@ -64,8 +64,8 @@ def walk():
     locals().update(default())
     # Environment
     env = 'RexWalk-v0'
-    max_length = 1000
-    steps = 8e6  # 8M
+    max_length = 2500
+    steps = 5e6  # 5M
     return locals()
 
 
@@ -75,7 +75,7 @@ def turn():
     # Environment
     env = 'RexTurn-v0'
     max_length = 1000
-    steps = 8e6  # 8M
+    steps = 3e6  # 3M
     return locals()
 
 

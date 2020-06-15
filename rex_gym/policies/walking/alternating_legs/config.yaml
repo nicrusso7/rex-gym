@@ -18,8 +18,8 @@ dictitems:
   kl_cutoff_factor: 2
   kl_init_penalty: 1
   kl_target: 0.01
-  logdir: /home/seven/dev/test/walk/20200124T102416-rex_walk
-  max_length: 1000
+  logdir: /home/seven/dev/rex-policies/v2/walk/20200615T004150-walk
+  max_length: 2500
   network: !!python/name:rex_gym.agents.scripts.networks.ForwardGaussianPolicy ''
   num_agents: 25
   policy_layers: &id001 !!python/tuple
@@ -27,7 +27,7 @@ dictitems:
   - 100
   policy_lr: 0.0001
   policy_optimizer: AdamOptimizer
-  steps: 8000000.0
+  steps: 5000000.0
   update_epochs_policy: 50
   update_epochs_value: 50
   update_every: 25

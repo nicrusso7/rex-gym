@@ -223,6 +223,6 @@ class Loop(object):
     """
         if not self._logdir or not saver:
             return
-        tf.gfile.MakeDirs(self._logdir)
+        tf.io.gfile.makedirs(self._logdir)
         filename = os.path.join(self._logdir, 'model.ckpt')
         saver.save(sess, filename, global_step)

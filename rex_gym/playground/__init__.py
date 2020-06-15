@@ -24,7 +24,7 @@ register(
 register(
     id='RexWalk-v0',
     entry_point='rex_gym.envs.gym.walk_env:RexWalkEnv',
-    max_episode_steps=1000,
+    max_episode_steps=2500,
     reward_threshold=5.0,
 )
 
@@ -39,5 +39,12 @@ register(
     id='RexStandup-v0',
     entry_point='rex_gym.envs.gym.standup_env:RexStandupEnv',
     max_episode_steps=400,
+    reward_threshold=5.0,
+)
+
+register(
+    id='RexGo-v0',
+    entry_point='rex_gym.envs.gym.go_env:RexGoEnv',
+    max_episode_steps=1000,
     reward_threshold=5.0,
 )
