@@ -97,9 +97,11 @@ class RexWalkEnv(rex_gym_env.RexGymEnv):
         self._target_position = target_position
         self.goal_reached = False
         self.period = 1.0 / 4.5
+        self.termination_time = []
 
     def reset(self):
         super(RexWalkEnv, self).reset()
+        self.termination_time = []
         self.goal_reached = False
         if not self._target_position or self._random_pos_target:
             self._target_position = random.uniform(0.9, 3)
@@ -117,10 +119,15 @@ class RexWalkEnv(rex_gym_env.RexGymEnv):
         self.action_space = spaces.Box(-action_high, action_high)
         return False
 
-    def _convert_from_leg_model(self, leg_pose):
+    def _terminate_with_delay(self, current_t):
+        if current_t - self.termination_time[0] >= 3:
+            self.env_goal_reached = True
+
+    def _convert_from_leg_model(self, leg_pose, t):
         motor_pose = np.zeros(NUM_MOTORS)
         if self.goal_reached:
             if self.break_gait():
+                self._terminate_with_delay(t)
                 return self.rex.initial_pose
         for i in range(NUM_LEGS):
             if i % 2 == 0:
@@ -153,8 +160,9 @@ class RexWalkEnv(rex_gym_env.RexGymEnv):
         return signal
 
     def _transform_action_to_motor_command(self, action):
-        action += self._signal(self.rex.GetTimeSinceReset())
-        action = self._convert_from_leg_model(action)
+        t = self.rex.GetTimeSinceReset()
+        action += self._signal(t)
+        action = self._convert_from_leg_model(action, t)
         self._check_target_position()
         return action
 
