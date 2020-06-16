@@ -127,7 +127,7 @@ class RexWalkEnv(rex_gym_env.RexGymEnv):
         motor_pose = np.zeros(NUM_MOTORS)
         if self.goal_reached:
             if self.break_gait():
-                self._terminate_with_delay(t)
+                # self._terminate_with_delay(t)
                 return self.rex.initial_pose
         for i in range(NUM_LEGS):
             if i % 2 == 0:
