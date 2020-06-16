@@ -454,7 +454,7 @@ class ExternalProcess(object):
         except Exception:  # pylint: disable=broad-except
             stacktrace = ''.join(traceback.format_exception(*sys.exc_info()))
             conn.send((self._EXCEPTION, stacktrace))
-            tf.logging.error('Error in environment process: {}'.format(stacktrace))
+            tf.compat.v1.logging.error('Error in environment process: {}'.format(stacktrace))
         conn.close()
 
 

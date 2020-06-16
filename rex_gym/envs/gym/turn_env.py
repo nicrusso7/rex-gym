@@ -198,7 +198,7 @@ class RexTurnEnv(rex_gym_env.RexGymEnv):
         return motor_pose
 
     def _terminate_with_delay(self, current_t):
-        if current_t - self.termination_time[0] >= 3:
+        if current_t - self.termination_time[0] >= 2.5:
             self.env_goal_reached = True
 
     def _transform_action_to_motor_command(self, action):

@@ -139,10 +139,10 @@ class RexWalkEnv(rex_gym_env.RexGymEnv):
         return motor_pose
 
     def _check_target_position(self):
-        # walking on negative axis
-        current_x = -self.rex.GetBasePosition()[0]
-        if current_x >= self._target_position - 1:
+        current_x = abs(self.rex.GetBasePosition()[0])
+        if current_x >= abs(self._target_position) - 1:
             self.goal_reached = True
+            self.termination_time.append(self.rex.GetTimeSinceReset())
 
     def _signal(self, t):
         initial_pose = self.rex.initial_pose
