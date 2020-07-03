@@ -10,5 +10,6 @@ ENV_ID_TO_ENV_NAMES = {
     'walk': 'RexWalkEnv',
     'turn': 'RexTurnEnv',
     'standup': 'RexStandupEnv',
-    'go': 'RexGoEnv'
+    'go': 'RexGoEnv',
+    'poses': 'RexPosesEnv'
 }

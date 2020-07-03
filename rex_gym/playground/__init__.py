@@ -48,3 +48,10 @@ register(
     max_episode_steps=1000,
     reward_threshold=5.0,
 )
+
+register(
+    id='RexPoses-v0',
+    entry_point='rex_gym.envs.gym.poses_env:RexPosesEnv',
+    max_episode_steps=400,
+    reward_threshold=5.0,
+)

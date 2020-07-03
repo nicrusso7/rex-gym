@@ -1,6 +1,7 @@
 """This file implements the gym environment of Rex.
 
 """
+import collections
 import math
 import time
 import gym
@@ -85,7 +86,12 @@ class RexGymEnv(gym.Env):
                  target_orient=None,
                  init_orient=None,
                  target_position=None,
-                 start_position=None):
+                 start_position=None,
+                 base_y=None,
+                 base_z=None,
+                 base_roll=None,
+                 base_pitch=None,
+                 base_yaw=None):
         """ Initialize the rex gym environment.
 
             Args:
@@ -222,6 +228,20 @@ class RexGymEnv(gym.Env):
         self._random_orient_target = False
         self._random_orient_start = False
         self._companion_obj = {}
+        self._queue = collections.deque(["base_y", "base_z", "roll", "pitch", "yaw"])
+        self._ranges = {
+            "base_x": (-0.001, 0.02, 0.012),
+            "base_y": (-0.007, 0.007, 0),
+            "base_z": (-0.048, 0.021, 0),
+            "roll": (-np.pi / 4, np.pi / 4, 0),
+            "pitch": (-np.pi / 4, np.pi / 4, 0),
+            "yaw": (-np.pi / 4, np.pi / 4, 0)
+        }
+        self._base_y = base_y
+        self._base_z = base_z
+        self._base_roll = base_roll
+        self._base_pitch = base_pitch
+        self._base_yaw = base_yaw
         self.seed()
         self.reset()
         observation_high = (self._get_observation_upper_bound() + OBSERVATION_EPS)
@@ -434,10 +454,7 @@ class RexGymEnv(gym.Env):
     def _termination(self):
         if self.is_fallen():
             print("IS FALLING DOWN!")
-        o = self.rex.GetBaseOrientation()
-        if o[1] < -0.13:
-            print("IS ROTATING!")
-        return self.is_fallen() or o[1] < -0.13 or self.env_goal_reached
+        return self.is_fallen() or self.env_goal_reached
 
     def _reward(self):
         current_base_position = self.rex.GetBasePosition()

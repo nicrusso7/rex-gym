@@ -49,6 +49,12 @@ def MapToMinusPiToPi(angles):
 class Rex(object):
     """The Rex class that simulates a quadruped robot."""
     INIT_POSES = {
+        'stand': np.array([
+            0.15192765, -0.90412283, 1.48156545,
+            -0.15192765, -0.90412283, 1.48156545,
+            0.15192765, -0.90412283, 1.48156545,
+            -0.15192765, -0.90412283, 1.48156545
+        ]),
         'stand_low': np.array([
             0.1, -0.82, 1.35,
             -0.1, -0.82, 1.35,
@@ -87,7 +93,7 @@ class Rex(object):
                  torque_control_enabled=False,
                  motor_overheat_protection=False,
                  on_rack=False,
-                 pose_id='stand_low'):
+                 pose_id='stand'):
         """Constructs a Rex and reset it to the initial states.
 
         Args:
@@ -149,7 +155,7 @@ class Rex(object):
         self._torque_control_enabled = torque_control_enabled
         self._motor_overheat_protection = motor_overheat_protection
         self._on_rack = on_rack
-        self._pose_id = pose_id
+        self.pose_id = pose_id
         # @TODO fix MotorModel
         if self._accurate_motor_model_enabled:
             self._kp = motor_kp
@@ -348,7 +354,7 @@ class Rex(object):
                                                     velocityGain=self._kd,
                                                     force=self._max_force)
 
-    def _SetDesiredMotorAngleByName(self, motor_name, desired_angle):
+    def SetDesiredMotorAngleByName(self, motor_name, desired_angle):
         self._SetDesiredMotorAngleById(self._joint_name_to_id[motor_name], desired_angle)
 
     def ResetPose(self):
@@ -373,17 +379,17 @@ class Rex(object):
         self._pybullet_client.resetJointState(self.quadruped,
                                               self._joint_name_to_id["motor_" + leg_position +
                                                                      "_shoulder"],
-                                              self.INIT_POSES[self._pose_id][3 * leg_id],
+                                              self.INIT_POSES[self.pose_id][3 * leg_id],
                                               targetVelocity=0)
 
         self._pybullet_client.resetJointState(self.quadruped,
                                               self._joint_name_to_id["motor_" + leg_position +
                                                                      "_leg"],
-                                              self.INIT_POSES[self._pose_id][3 * leg_id + 1],
+                                              self.INIT_POSES[self.pose_id][3 * leg_id + 1],
                                               targetVelocity=0)
         self._pybullet_client.resetJointState(self.quadruped,
                                               self._joint_name_to_id["foot_motor_" + leg_position],
-                                              self.INIT_POSES[self._pose_id][3 * leg_id + 2],
+                                              self.INIT_POSES[self.pose_id][3 * leg_id + 2],
                                               targetVelocity=0)
 
         if self._accurate_motor_model_enabled or self._pd_control_enabled:
