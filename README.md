@@ -112,12 +112,12 @@ The robot model is imported in `pyBullet` using an [URDF file](rex_gym/util/pybu
 # Tasks
 This is the list of tasks this experiment will cover:
 
-1. Basic controls
-    0. Static poses
-    1. Gallop/Walk straight on - forward/backward
-    2. Turn left/right on the spot
-    3. Stand up/Sit down
-    4. Side swipe
+1. Basic controls:
+    1. Static poses
+    2. Gallop/Walk straight on - forward/backward
+    3. Turn left/right on the spot
+    4. Stand up/Sit down
+    5. Side swipe
 2. Fall recovery
 3. Reach a specific point in a map
 5. Grab an object
