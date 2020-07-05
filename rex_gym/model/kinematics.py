@@ -1,7 +1,5 @@
 import numpy as np
 
-PI = np.pi
-
 
 class Kinematics:
     def __init__(self):

@@ -113,6 +113,7 @@ The robot model is imported in `pyBullet` using an [URDF file](rex_gym/util/pybu
 This is the list of tasks this experiment will cover:
 
 1. Basic controls
+    0. Static poses
     1. Gallop/Walk straight on - forward/backward
     2. Turn left/right on the spot
     3. Stand up/Sit down
@@ -121,8 +122,16 @@ This is the list of tasks this experiment will cover:
 3. Reach a specific point in a map
 5. Grab an object
 
+## Basic Controls: Static poses
+Goal: Move Rex base to assume static poses. 
+### Gym Environment
+This environment uses the `kinematics` model to train Rex to assume static poses. The model uses a `sigmoid function` to orchestrate the movement.
+When the render mode is active, it's possible to use the pybullet UI to set a specific pose.
+
+![](rex_gym/util/images/ik.gif)
+
 ## Basic Controls: Run
-Goal: how to run straight on. 
+Goal: run straight on. 
 ### Gym Environment
 There is a good number of papers on quadrupeds locomotion, some of them with sample code. Probably, the most complete collection 
 of examples is the [Minitaur folder](https://github.com/bulletphysics/bullet3/tree/master/examples/pybullet/gym/pybullet_envs/minitaur) in the Bullet3 repository. 
@@ -194,6 +203,8 @@ before completing the movement.
 [Sim-to-Real: Learning Agile Locomotion For Quadruped Robots](https://arxiv.org/pdf/1804.10332.pdf) and all the related papers. Google Brain, Google X, Google DeepMind - Minitaur Ghost Robotics.
 
 [Deok-yeon Kim](https://www.thingiverse.com/KDY0523/about) creator of SpotMini.
+
+The Kinematics model was largely inspired by the great work done by [Miguel Ayuso](https://hackaday.io/project/171456-diy-hobby-servos-quadruped-robot).
 
 The great work in rendering the robot platform done by the [SpotMicroAI](https://github.com/FlorianWilk/SpotMicroAI) community.
 
