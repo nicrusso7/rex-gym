@@ -55,7 +55,7 @@ def gallop():
     # Environment
     env = 'RexGalloping-v0'
     max_length = 1000
-    steps = 8e6  # 8M
+    steps = 5e6  # 8M
     return locals()
 
 
@@ -104,6 +104,16 @@ def poses():
     locals().update(default())
     # Environment
     env = 'RexPoses-v0'
+    max_length = 1000
+    steps = 5e6  # 5M
+    return locals()
+
+
+def jump():
+    """Configuration for Rex go-to task."""
+    locals().update(default())
+    # Environment
+    env = 'RexJump-v0'
     max_length = 1000
     steps = 5e6  # 5M
     return locals()
