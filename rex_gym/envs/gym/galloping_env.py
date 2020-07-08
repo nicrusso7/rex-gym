@@ -11,11 +11,6 @@ from .. import rex_gym_env
 # Radiant
 from ...model.rex import Rex
 
-INIT_SHOULDER_POS = 0.0
-# -math.pi / 5
-INIT_LEG_POS = -0.658319
-# math.pi / 3
-INIT_FOOT_POS = 1.0472
 NUM_LEGS = 4
 NUM_MOTORS = 3 * NUM_LEGS
 
@@ -112,15 +107,13 @@ class RexReactiveEnv(rex_gym_env.RexGymEnv):
                              control_time_step=control_time_step,
                              action_repeat=action_repeat)
 
-        action_dim = 2
-        action_low = np.array([-0.3] * action_dim)
+        action_dim = 4
+        action_low = np.array([-0.4] * action_dim)
         action_high = -action_low
         self.action_space = spaces.Box(action_low, action_high)
         self._cam_dist = 1.0
         self._cam_yaw = 30
         self._cam_pitch = -30
-        self.init_leg = INIT_LEG_POS
-        self.init_foot = INIT_FOOT_POS
 
     def reset(self):
         super(RexReactiveEnv, self).reset(initial_motor_angles=Rex.INIT_POSES['stand'],
@@ -131,32 +124,22 @@ class RexReactiveEnv(rex_gym_env.RexGymEnv):
         motor_pose = np.zeros(NUM_MOTORS)
         for i in range(NUM_LEGS):
             motor_pose[int(3 * i)] = self.rex.initial_pose[3 * i]
-            # if i == 0 or i == 1:
-            leg_action = self.init_leg + leg_pose[0]
-            motor_pose[int(3 * i + 1)] = max(min(leg_action, self.init_leg + 0.30), self.init_leg - 0.30)
-            foot_pose = self.init_foot + leg_pose[1]
-            motor_pose[int(3 * i + 2)] = max(min(foot_pose, self.init_foot + 0.30), self.init_foot - 0.30)
-            # else:
-            #     leg_action = self.init_leg + leg_pose[2]
-            #     motor_pose[int(3 * i + 1)] = max(min(leg_action, self.init_leg + 0.30), self.init_leg - 0.30)
-            #     foot_pose = self.init_foot + leg_pose[3]
-            #     motor_pose[int(3 * i + 2)] = max(min(foot_pose, self.init_foot + 0.30), self.init_foot - 0.30)
-
+            init_leg = self.rex.initial_pose[3 * i + 1]
+            init_foot = self.rex.initial_pose[3 * i + 2]
+            if i == 0 or i == 1:
+                motor_pose[int(3 * i + 1)] = init_leg + leg_pose[0]
+                motor_pose[int(3 * i + 2)] = init_foot + leg_pose[1]
+            else:
+                motor_pose[int(3 * i + 1)] = init_leg + leg_pose[2]
+                motor_pose[int(3 * i + 2)] = init_foot + leg_pose[3]
         return motor_pose
 
-    # REX_LEG_MODELS = [
-    #   JUMP  ------>
-    #   motor_pose[int(3 * i)] = 0
-    #   leg_action = self.init_leg + leg_pose[int(3 * i)]
-    #   motor_pose[int(3 * i + 1)] = max(min(leg_action, self.init_leg + 0.45), self.init_leg - 0.78)
-    #   foot_pose = self.init_foot + leg_pose[int(3 * i)]
-    #   motor_pose[int(3 * i + 2)] = max(min(foot_pose, self.init_foot + 0.63), self.init_foot - 0.63)
-    #   -----------------------------------------------------------------------------------------------
-    # ]
-
     def _transform_action_to_motor_command(self, action):
-        # Add the reference trajectory.
         return self._convert_from_leg_model(action)
+
+    def _out_of_trajectory(self):
+        current_base_position = self.rex.GetBasePosition()
+        return current_base_position[1] > 0.3
 
     def is_fallen(self):
         """Decides whether Rex is in a fallen state.

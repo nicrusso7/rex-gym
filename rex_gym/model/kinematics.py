@@ -6,8 +6,8 @@ class Kinematics:
         self._l = 0.14
         self._w = 0.075
         self._hip = 0.04
-        self._leg = 0.10
-        self._foot = 0.10
+        self._leg = 0.1
+        self._foot = 0.1
         self._y_dist = 0.11
         self._x_dist = self._l
         self._height = 0.15
@@ -100,7 +100,9 @@ class Kinematics:
         angles = np.array([theta, -alpha, -gamma])
         return angles
 
-    def solve(self, orientation, position):
+    def solve(self, orientation, position, frames=None):
+        if frames is not None:
+            self._frames = frames
         foot_front_right = np.asarray([self._frames[0, 0], self._frames[0, 1], self._frames[0, 2]])
         foot_front_left = np.asarray([self._frames[1, 0], self._frames[1, 1], self._frames[1, 2]])
         foot_rear_right = np.asarray([self._frames[2, 0], self._frames[2, 1], self._frames[2, 2]])

@@ -453,22 +453,31 @@ class RexGymEnv(gym.Env):
 
     def _termination(self):
         if self.is_fallen():
-            print("IS FALLING DOWN!")
+            print("FALLING DOWN!")
+        if self._out_of_trajectory():
+            print("OUT OF TRAJECTORY!")
         return self.is_fallen() or self.env_goal_reached
+
+    @staticmethod
+    def _out_of_trajectory():
+        return False
 
     def _reward(self):
         current_base_position = self.rex.GetBasePosition()
+        # observation = self._get_observation()
         # forward direction
         forward_reward = -current_base_position[0] + self._last_base_position[0]
         # Cap the forward reward if a cap is set.
         forward_reward = min(forward_reward, self._forward_reward_cap)
         # Penalty for sideways translation.
-        drift_reward = -abs(current_base_position[1] - self._last_base_position[1])
+        # drift_reward = -abs(current_base_position[1] - self._last_base_position[1])
+        drift_reward = -abs(current_base_position[1])
         # Penalty for sideways rotation of the body.
         orientation = self.rex.GetBaseOrientation()
         rot_matrix = pybullet.getMatrixFromQuaternion(orientation)
         local_up_vec = rot_matrix[6:]
         shake_reward = -abs(np.dot(np.asarray([1, 1, 0]), np.asarray(local_up_vec)))
+        # shake_reward = -abs(observation[4])
         energy_reward = -np.abs(
             np.dot(self.rex.GetMotorTorques(),
                    self.rex.GetMotorVelocities())) * self._time_step

@@ -206,5 +206,7 @@ before completing the movement.
 
 The Kinematics model was largely inspired by the great work done by [Miguel Ayuso](https://hackaday.io/project/171456-diy-hobby-servos-quadruped-robot).
 
+[Inverse Kinematic Analysis Of A Quadruped Robot.](https://www.researchgate.net/publication/320307716_Inverse_Kinematic_Analysis_Of_A_Quadruped_Robot)
+
 The great work in rendering the robot platform done by the [SpotMicroAI](https://github.com/FlorianWilk/SpotMicroAI) community.
 
