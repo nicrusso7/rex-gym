@@ -6,9 +6,12 @@ import random
 
 from gym import spaces
 import numpy as np
+from rex_gym.model.gait_planner import GaitPlanner
+
 from rex_gym.util import pybullet_data
 
 from .. import rex_gym_env
+from ...model.kinematics import Kinematics
 
 NUM_LEGS = 4
 NUM_MOTORS = 3 * NUM_LEGS
@@ -22,23 +25,26 @@ class RexTurnEnv(rex_gym_env.RexGymEnv):
     space is the desired motor angle for each motor. The reward function is based
     on how far the rex walks in 1000 steps and penalizes the energy expenditure."""
     metadata = {"render.modes": ["human", "rgb_array"], "video.frames_per_second": 66}
+    load_ui = True
+    is_terminating = False
 
     def __init__(self,
+                 debug=False,
                  urdf_version=None,
-                 control_time_step=0.006,
-                 action_repeat=6,
+                 control_time_step=0.005,
+                 action_repeat=5,
                  control_latency=0,
                  pd_latency=0,
                  on_rack=False,
                  motor_kp=1.0,
                  motor_kd=0.02,
-                 remove_default_joint_damping=False,
                  render=False,
                  num_steps_to_log=1000,
                  env_randomizer=None,
                  log_path=None,
                  target_orient=None,
-                 init_orient=None):
+                 init_orient=None,
+                 signal_type="ik"):
         """Initialize the rex alternating legs gym environment.
 
         Args:
@@ -52,8 +58,8 @@ class RexTurnEnv(rex_gym_env.RexGymEnv):
           pd_latency: The latency used to get motor angles/velocities used to
             compute PD controllers. See rex.py for more details.
           on_rack: Whether to place the rex on rack. This is only used to debug
-            the walking gait. In this mode, the rex's base is hung midair so
-            that its walking gait is clearer to visualize.
+            the walk gait. In this mode, the rex's base is hung midair so
+            that its walk gait is clearer to visualize.
           motor_kp: The P gain of the motor.
           motor_kd: The D gain of the motor.
           remove_default_joint_damping: Whether to remove the default joint damping.
@@ -68,13 +74,13 @@ class RexTurnEnv(rex_gym_env.RexGymEnv):
             rex_logging.proto.
         """
         super(RexTurnEnv, self).__init__(
+            debug=debug,
             urdf_version=urdf_version,
             accurate_motor_model_enabled=True,
             motor_overheat_protection=True,
             hard_reset=False,
             motor_kp=motor_kp,
             motor_kd=motor_kd,
-            remove_default_joint_damping=remove_default_joint_damping,
             control_latency=control_latency,
             pd_latency=pd_latency,
             on_rack=on_rack,
@@ -85,33 +91,45 @@ class RexTurnEnv(rex_gym_env.RexGymEnv):
             control_time_step=control_time_step,
             action_repeat=action_repeat,
             target_orient=target_orient,
+            signal_type=signal_type,
             init_orient=init_orient)
-
-        action_dim = 12
-        action_high = np.array([0.05] * action_dim)
+        action_max = {
+            'ik': 0.05,
+            'ol': 0.05
+        }
+        action_dim_map = {
+            'ik': 2,
+            'ol': 2
+        }
+        action_dim = action_dim_map[self._signal_type]
+        action_high = np.array([action_max[self._signal_type]] * action_dim)
         self.action_space = spaces.Box(-action_high, action_high)
         self._cam_dist = 1.8
         self._cam_yaw = 30
         self._cam_pitch = -30
-        self.last_step = 0
+        self._signal_type = signal_type
+        # we need alternate gait, so walk will works
+        self._gait_planner = GaitPlanner("walk")
+        self._kinematics = Kinematics()
         self._target_orient = target_orient
         self._init_orient = init_orient
         self._random_orient_target = False
         self._random_orient_start = False
         self._cube = None
         self.goal_reached = False
-        self.termination_time = []
+        self._stay_still = False
+        self.is_terminating = False
         if self._on_rack:
             self._cam_pitch = 0
 
     def reset(self):
-        self.termination_time = []
         self.goal_reached = False
+        self.is_terminating = False
+        self._stay_still = False
         super(RexTurnEnv, self).reset()
         if not self._target_orient or self._random_orient_target:
             self._target_orient = random.uniform(0.2, 6)
             self._random_orient_target = True
-
         if self._on_rack:
             # on rack debug simulation
             self._init_orient = 2.1
@@ -121,22 +139,137 @@ class RexTurnEnv(rex_gym_env.RexGymEnv):
             if self._init_orient is None or self._random_orient_start:
                 self._init_orient = random.uniform(0.2, 6)
                 self._random_orient_start = True
-        print(f"Start Orientation: {self._init_orient}, Target Orientation: {self._target_orient}")
-        clockwise = self._solve_direction()
-        print("Turning right") if clockwise else print("Turning left")
+        self.clockwise = self._solve_direction()
+        if self._is_debug:
+            print(f"Start Orientation: {self._init_orient}, Target Orientation: {self._target_orient}")
+            print("Turning right") if self.clockwise else print("Turning left")
+        if self._is_render and self._signal_type == 'ik':
+            if self.load_ui:
+                self.setup_ui()
+                self.load_ui = False
         self._load_cube(self._target_orient)
         q = self.pybullet_client.getQuaternionFromEuler([0, 0, self._init_orient])
         self.pybullet_client.resetBasePositionAndOrientation(self.rex.quadruped, position, q)
         return self._get_observation()
 
-    def _signal(self, t):
-        initial_pose = self.rex.INIT_POSES['stand_high']
+    def setup_ui(self):
+        self.base_x_ui = self._pybullet_client.addUserDebugParameter("base_x",
+                                                                     self._ranges["base_x"][0],
+                                                                     self._ranges["base_x"][1],
+                                                                     self._ranges["base_x"][2])
+        self.base_y_ui = self._pybullet_client.addUserDebugParameter("base_y",
+                                                                     self._ranges["base_y"][0],
+                                                                     self._ranges["base_y"][1],
+                                                                     self._ranges["base_y"][2])
+        self.base_z_ui = self._pybullet_client.addUserDebugParameter("base_z",
+                                                                     self._ranges["base_z"][0],
+                                                                     self._ranges["base_z"][1],
+                                                                     self._ranges["base_z"][2])
+        self.roll_ui = self._pybullet_client.addUserDebugParameter("roll",
+                                                                   self._ranges["roll"][0],
+                                                                   self._ranges["roll"][1],
+                                                                   self._ranges["roll"][2])
+        self.pitch_ui = self._pybullet_client.addUserDebugParameter("pitch",
+                                                                    self._ranges["pitch"][0],
+                                                                    self._ranges["pitch"][1],
+                                                                    self._ranges["pitch"][2])
+        self.yaw_ui = self._pybullet_client.addUserDebugParameter("yaw",
+                                                                  self._ranges["yaw"][0],
+                                                                  self._ranges["yaw"][1],
+                                                                  self._ranges["yaw"][2])
+        self.step_length_ui = self._pybullet_client.addUserDebugParameter("step_length", -0.7, 0.7, 0.1)
+        self.step_rotation_ui = self._pybullet_client.addUserDebugParameter("step_rotation", -1.5, 1.5, 0.2)
+        self.step_angle_ui = self._pybullet_client.addUserDebugParameter("step_angle", -180., 180., 0.)
+        self.step_period_ui = self._pybullet_client.addUserDebugParameter("step_period", 0.2, 0.9, 0.4)
+
+    def _read_inputs(self, base_pos_coeff, gait_stage_coeff):
+        position = np.array(
+            [
+                self._pybullet_client.readUserDebugParameter(self.base_x_ui),
+                self._pybullet_client.readUserDebugParameter(self.base_y_ui) * base_pos_coeff,
+                self._pybullet_client.readUserDebugParameter(self.base_z_ui) * base_pos_coeff
+            ]
+        )
+        orientation = np.array(
+            [
+                self._pybullet_client.readUserDebugParameter(self.roll_ui) * base_pos_coeff,
+                self._pybullet_client.readUserDebugParameter(self.pitch_ui) * base_pos_coeff,
+                self._pybullet_client.readUserDebugParameter(self.yaw_ui) * base_pos_coeff
+            ]
+        )
+        step_length = self._pybullet_client.readUserDebugParameter(self.step_length_ui)
+        step_rotation = self._pybullet_client.readUserDebugParameter(self.step_rotation_ui) * gait_stage_coeff
+        step_angle = self._pybullet_client.readUserDebugParameter(self.step_angle_ui)
+        step_period = self._pybullet_client.readUserDebugParameter(self.step_period_ui)
+        return position, orientation, step_length, step_rotation, step_angle, step_period
+
+    def _signal(self, t, action):
+        if self._signal_type == 'ik':
+            return self._IK_signal(t, action)
+        if self._signal_type == 'ol':
+            return self._open_loop_signal(t, action)
+
+    @staticmethod
+    def _evaluate_base_stage_coeff(current_t, end_t=0.0, width=0.001):
+        # sigmoid function
+        beta = p = width
+        if p - beta + end_t <= current_t <= p - (beta / 2) + end_t:
+            return (2 / beta ** 2) * (current_t - p + beta) ** 2
+        elif p - (beta/2) + end_t <= current_t <= p + end_t:
+            return 1 - (2 / beta ** 2) * (current_t - p) ** 2
+        else:
+            return 1
+
+    @staticmethod
+    def _evaluate_gait_stage_coeff(current_t, action, end_t=0.0):
+        # ramp function
+        p = 0.8 + action[0]
+        if end_t <= current_t <= p + end_t:
+            return current_t
+        else:
+            return 1.0
+
+    def _IK_signal(self, t, action):
+        base_pos_coeff = self._evaluate_base_stage_coeff(t, width=1.5)
+        gait_stage_coeff = self._evaluate_gait_stage_coeff(t, action)
+        if self._is_render and self._is_debug:
+            position, orientation, step_length, step_rotation, step_angle, step_period = \
+                self._read_inputs(base_pos_coeff, gait_stage_coeff)
+        else:
+            step_dir_value = -0.2 * gait_stage_coeff
+            if self.clockwise:
+                step_dir_value *= -1
+            position = np.array([self._base_x,
+                                 self._base_y * base_pos_coeff,
+                                 self._base_z * base_pos_coeff])
+            orientation = np.array([self._base_roll * base_pos_coeff,
+                                    self._base_pitch * base_pos_coeff,
+                                    self._base_yaw * base_pos_coeff])
+            step_length = (self.step_length if self.step_length is not None else 0.1) + action[0]
+            step_rotation = (self.step_rotation if self.step_rotation is not None else step_dir_value) + action[1]
+            step_angle = self.step_angle if self.step_angle is not None else 0.0
+            step_period = (self.step_period if self.step_period is not None else 0.4)
+        if self.goal_reached:
+            self._stay_still = True
+        frames = self._gait_planner.loop(step_length, step_angle, step_rotation, step_period)
+        fr_angles, fl_angles, rr_angles, rl_angles, _ = self._kinematics.solve(orientation, position, frames)
+        signal = [
+            fl_angles[0], fl_angles[1], fl_angles[2],
+            fr_angles[0], fr_angles[1], fr_angles[2],
+            rl_angles[0], rl_angles[1], rl_angles[2],
+            rr_angles[0], rr_angles[1], rr_angles[2]
+        ]
+        return signal
+
+    def _open_loop_signal(self, t, action):
+        if self.goal_reached:
+            self._stay_still = True
+        initial_pose = self.rex.INIT_POSES['stand']
         period = STEP_PERIOD
         extension = 0.1
-        swing = 0.2
-        swipe = 0.1
+        swing = 0.03 + action[0]
+        swipe = 0.05 + action[1]
         ith_leg = int(t / period) % 2
-
         pose = {
             'left_0': np.array([swipe, extension, -swing,
                                 -swipe, extension, swing,
@@ -164,7 +297,6 @@ class RexTurnEnv(rex_gym_env.RexGymEnv):
             # turn left
             first_leg = pose['left_0']
             second_leg = pose['left_1']
-
         if ith_leg:
             signal = initial_pose + second_leg
         else:
@@ -182,29 +314,27 @@ class RexTurnEnv(rex_gym_env.RexGymEnv):
                 clockwise = True
         return clockwise
 
-    def _convert_from_leg_model(self, leg_pose, t):
-        if t < .4:
-            # set init position
-            return self.rex.INIT_POSES['stand_high']
-        motor_pose = np.zeros(NUM_MOTORS)
-        for i in range(NUM_LEGS):
-            if self.goal_reached:
-                self._terminate_with_delay(t)
-                return self.rex.initial_pose
-            else:
-                motor_pose[3 * i] = leg_pose[3 * i]
-                motor_pose[3 * i + 1] = leg_pose[3 * i + 1]
-                motor_pose[3 * i + 2] = leg_pose[3 * i + 2]
-        return motor_pose
+    def _check_target_position(self, t):
+        current_z = self.pybullet_client.getEulerFromQuaternion(self.rex.GetBaseOrientation())[2]
+        if current_z < 0:
+            current_z += 6.28
+        if abs(self._target_orient - current_z) <= 0.01:
+            self.goal_reached = True
+            if not self.is_terminating:
+                self.end_time = t
+                self.is_terminating = True
 
     def _terminate_with_delay(self, current_t):
-        if current_t - self.termination_time[0] >= 2.5:
+        if current_t - self.end_time >= 1.:
             self.env_goal_reached = True
 
     def _transform_action_to_motor_command(self, action):
+        if self._stay_still:
+            self._terminate_with_delay(self.rex.GetTimeSinceReset())
+            return self.rex.initial_pose
         t = self.rex.GetTimeSinceReset()
-        action += self._signal(t)
-        action = self._convert_from_leg_model(action, t)
+        self._check_target_position(t)
+        action = self._signal(t, action)
         return action
 
     def is_fallen(self):
@@ -223,42 +353,9 @@ class RexTurnEnv(rex_gym_env.RexGymEnv):
 
     def _reward(self):
         current_base_position = self.rex.GetBasePosition()
-        current_base_orientation = self.pybullet_client.getEulerFromQuaternion(self.rex.GetBaseOrientation())
-        target_orient = (0, 0, self._target_orient)
-        target_position = [0.0, 0.0, 0.21]
-        yaw = current_base_orientation[2]
-        if yaw < 0:
-            yaw += 6.28
-
-        proximity_reward = \
-            abs(target_orient[0] - current_base_orientation[0]) + \
-            abs(target_orient[1] - current_base_orientation[1]) + \
-            abs(target_orient[2] - yaw)
-
-        position_reward = \
-            abs(target_position[0] - current_base_position[0]) + \
-            abs(target_position[1] - current_base_position[1]) + \
-            abs(target_position[2] - current_base_position[2])
-
-        is_oriented = False
-        is_pos = False
-        if abs(proximity_reward) <= 0.15:
-            proximity_reward = 100 - proximity_reward
-            is_oriented = True
-        else:
-            proximity_reward = -proximity_reward
-
-        if abs(position_reward) <= 0.3:
-            position_reward = 100 - position_reward
-            is_pos = True
-        else:
-            position_reward = -position_reward
-
-        if is_pos and is_oriented:
-            self.termination_time.append(self.rex.GetTimeSinceReset())
-            self.goal_reached = True
-
-        reward = position_reward + proximity_reward
+        # tolerance: 0.035
+        position_penality = 0.035 - abs(current_base_position[0]) - abs(current_base_position[1])
+        reward = position_penality
         return reward
 
     def _load_cube(self, angle):

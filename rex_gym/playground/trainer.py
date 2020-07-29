@@ -11,15 +11,21 @@ from rex_gym.agents.tools import wrappers
 from rex_gym.agents.scripts import configs, utility
 from rex_gym.agents.tools.attr_dict import AttrDict
 from rex_gym.agents.tools.loop import Loop
+from rex_gym.util import action_mapper
 
 
 class Trainer:
-    def __init__(self, env_id: str, args: dict, playground: bool, log_dir: str, agents_number):
-        self.env_id = env_id
+    def __init__(self, env_id: str, args: dict, playground: bool, log_dir: str, agents_number, signal_type):
         self.args = args
         self.playground = playground
         self.log_dir = log_dir
         self.agents = agents_number
+        self.signal_type = signal_type
+        if self.signal_type:
+            env_signal = self.signal_type
+        else:
+            env_signal = action_mapper.DEFAULT_SIGNAL[env_id]
+        self.env_id = f"{env_id}_{env_signal}"
 
     def _create_environment(self, config):
         """Constructor for an instance of the environment.
@@ -32,6 +38,11 @@ class Trainer:
         """
         if self.playground:
             self.args['render'] = True
+            self.args['debug'] = True
+        else:
+            self.args['debug'] = False
+        if self.signal_type:
+            self.args['signal_type'] = self.signal_type
         env = gym.make(config.env, **self.args)
         if config.max_length:
             env = wrappers.LimitDuration(env, config.max_length)

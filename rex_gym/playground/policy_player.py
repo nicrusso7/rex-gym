@@ -11,19 +11,27 @@ from rex_gym.util import action_mapper
 
 
 class PolicyPlayer:
-    def __init__(self, env_id: str, args: dict):
+    def __init__(self, env_id: str, args: dict, signal_type: str):
         self.gym_dir_path = str(site.getsitepackages()[0])
         self.env_id = env_id
         self.args = args
+        self.signal_type = signal_type
+        self.args['debug'] = True
 
     def play(self):
-        policy_dir = os.path.join(self.gym_dir_path, action_mapper.ENV_ID_TO_POLICY[self.env_id][0])
+        if self.signal_type:
+            self.args['signal_type'] = self.signal_type
+        else:
+            self.signal_type = action_mapper.DEFAULT_SIGNAL[self.env_id]
+        policy_id = f"{self.env_id}_{self.signal_type}"
+        policy_path = action_mapper.ENV_ID_TO_POLICY[policy_id][0]
+        policy_dir = os.path.join(self.gym_dir_path, policy_path)
         config = utility.load_config(policy_dir)
         policy_layers = config.policy_layers
         value_layers = config.value_layers
         env = config.env(render=True, **self.args)
         network = config.network
-        checkpoint = os.path.join(policy_dir, action_mapper.ENV_ID_TO_POLICY[self.env_id][1])
+        checkpoint = os.path.join(policy_dir, action_mapper.ENV_ID_TO_POLICY[policy_id][1])
         with tf.Session() as sess:
             agent = simple_ppo_agent.SimplePPOPolicy(sess,
                                                      env,

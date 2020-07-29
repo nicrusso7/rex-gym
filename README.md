@@ -10,9 +10,9 @@ This project is mostly inspired by the incredible works done by Boston Dynamics.
 [rex-cloud](https://github.com/nicrusso7/rex-cloud) - A CLI application to train Rex on the cloud.
 
 # Rex-gym: OpenAI Gym environments and tools
-This repository contains different `OpenAI Gym Environments` used to train Rex, the Rex URDF model, 
-the learning agent and some scripts to start the training session and visualise the learned `Control Polices`.
-The CLI application allows batch training, policy reproduction and rendered single training sessions.
+This repository contains a collection of `OpenAI Gym Environments` used to train Rex, the Rex URDF model, 
+the learning agent implementation (PPO) and some scripts to start the training session and visualise the learned `Control Polices`.
+The CLI application allows batch training, policy reproduction and single training rendered sessions.
 
 # Installation
 Create a `Python 3.7` virtual environment, e.g. using `Anaconda`
@@ -33,9 +33,18 @@ Alternately, clone this repository and run from the root of the project:
 pip install .
 ```
 
-# CLI
+# CLI usage
 Run ``` rex-gym --help ``` to display the available commands and ``` rex-gym COMMAND_NAME --help ``` to show the help 
 message for a specific command.
+
+Use the `--arg` flag to eventually set the simulation arguments. For a full list check out the [environments parameters](#environments-parameters).
+
+To switch between the `open loop` and the `inverse kinematics controller` modes, just append the either `--open-loop` or `--inverse-kinematics` flags.
+```
+rex-gym COMMAND_NAME -ik
+rex-gym COMMAND_NAME -ol
+```
+For more info about the modes check out [the learning approach](#learning-approach).
 
 ## Policy player: run a pre-trained agent
 To start a pre-trained agent (play a learned `Control Policy`):
@@ -43,13 +52,175 @@ To start a pre-trained agent (play a learned `Control Policy`):
 rex-gym policy --env ENV_NAME
 ```
 
-## Training
+## Train: Run a single training simulation
+To start a single agent rendered session (`agents=1`, `render=True`):
+```
+rex-gym train --playground True --env ENV_NAME --log-dir LOG_DIR_PATH
+```
+
+## Train: Start a new batch training simulation
+To start a new batch training session:
+```
+rex-gym train --env ENV_NAME --log-dir LOG_DIR_PATH
+```
+
+# Robot platform
+## Mark 1
+The robot used for this first version is the [Spotmicro](https://www.thingiverse.com/thing:3445283) made by [Deok-yeon Kim](https://www.thingiverse.com/KDY0523/about).
+
+I've printed the components using a Creality Ender3 3D printer, with PLA and TPU+.
+
+The hardware used is listed in this [wiki](https://github.com/nicrusso7/rexctl/wiki/Mark-I).
+
+The idea is to extend the robot adding components like a robotic arm on the top of the rack and a LiDAR sensor in the next versions alongside 
+fixing some design issue to support a better (and easier) calibration and more reliable servo motors.
+
+# Simulation model
+Rex is a 12 joints robot with 3 motors (`Shoulder`, `Leg` and `Foot`) for each leg. 
+
+The robot model is imported in `pyBullet` using an [URDF file](rex_gym/util/pybullet_data/assets/urdf/rex.urdf). 
+
+The servo motors are modelled in the `model/motor.py` class.
+
+![rex bullet](images/rex.png)
+
+# Learning approach
+This library uses the `Proximal Policy Optimization (PPO)` algorithm with a hybrid policy defined as: <img src="http://www.sciweavers.org/tex2img.php?eq=a%28t%2C%20o%29%20%3D%20%20%5Cbar%7Ba%7D%28t%29%20%2B%20%20%5Cpi%28o%29&bc=White&fc=Black&im=jpg&fs=12&ff=arev&edit=0" align="center" border="0" alt="a(t, o) =  \bar{a}(t) +  \pi(o)" width="164" height="18" />
+
+It can be varied continuously from fully user-specified to entirely learned from scratch. 
+If we want to use a user-specified policy, we can set both the lower and the upper bounds of `π(o)` to be zero. 
+If we want a policy that is learned from scratch, we can set `a(t) = 0` and give the feedback component `π(o)` a wide output range.
+
+By varying the open loop signal and the output bound of the feedback component, we can decide how much user control is applied to the system. 
+
+A twofold approach is used to implement the Rex `Gym Environments`: `inverse kinematics controller` and `open loop`.
+
+The `inverse kinematics controller` (see `model/kinematics.py`) mode implements a fully user-specified policy. The controller is fed with the 
+desired robot base position (`x`,`y`,`z`), orientation (`roll`, `pitch`, `jaw`) and the planned body frames (using Bezier curves - 
+see `model/gait_planner.py`).
+
+The `open loop` mode consists, in some cases, in let the system lean from scratch (setting the open loop component `a(t) = 0` while others providing 
+just a simple trajectory reference (e.g. `a(t) = sin(t)`).
+
+The purpose is to compare the learned policies and scores using those two different approach.
+
+# Tasks
+This is the list of tasks this experiment want to cover:
+
+1. Basic controls:
+    1. **Static poses - Frame a point standing on the spot.**
+    - [x] Inverse kinematics controller
+    - [ ] Open loop signal
+    2. **Gallop**
+        - forward
+        - [x] Inverse kinematics controller
+        - [x] Open loop signal
+        - backward
+        - [ ] Inverse kinematics controller
+        - [ ] Open loop signal
+    3. **Walk**
+        -  forward
+        - [x] Inverse kinematics controller
+        - [x] Open loop signal
+        - backward
+        - [ ] Inverse kinematics controller
+        - [ ] Open loop signal
+    4. **Turn - on the spot**
+     - [x] Inverse kinematics controller
+     - [x] Open loop signal
+    5. **Stand up - from the floor**
+    - [ ] Inverse kinematics controller
+    - [x] Open loop signal
+2. **Reach a specific point in a map**
+3. **Map an open space**
+4. **Navigate uneven terrains**
+5. **Fall recovery**
+6. **Grab an object**
+
+# Environments
+
+## Basic Controls: Static poses
+Goal: Move Rex base to assume static poses standing on the spot.
+
+### Inverse kinematic
+The gym environment is used to learn how to gracefully assume a pose avoiding too fast transactions.
+It uses a one-dimensional `action space` with a feedback component `π(o)` with bounds `[-0.1, 0.1]`. 
+The feedback is applied to a sigmoid function to orchestrate the movement.
+When the `--playground` flag is used, it's possible to use the pyBullet UI to manually set a specific pose altering the robot base position 
+(`x`,`y`,`z`) and orientation (`roll`, `pitch`, `jaw`).
+
+![](images/ik.gif)
+
+## Basic Controls: Gallop
+Goal: Gallop straight on and stop at a desired position.
+
+### Open loop
+The gym environment is used to let the system learn the gait from scratch. The `action space` has 4 dimensions, two for the front legs and foots 
+and two for the rear legs and foots, with the feedback component output bounds `[−0.3, 0.3]`.
+
+![](images/gallop_ol.gif)
+
+### Inverse kinematic
+The gym environment is used to learn how to gracefully start the gait and then stop it after reaching the target position (on the `x` axis).
+It uses two-dimensional `action space` with a feedback component `π(o)` with bounds `[-0.3, 0.3]`. The feedback component is applied to two ramp functions 
+used to orchestrate the gait. A correct start contributes to void the drift effect generated by the gait in the resulted learned policy.   
+
+![](images/gallop_ik.gif)
+
+## Basic Controls: Walk
+Goal: Walk straight on and stop at a desired position.
+
+### Open loop
+The gym environment use a sinusoidal open loop signal to alternate the Rex legs during the gait. 
+
+<img src="http://www.sciweavers.org/tex2img.php?eq=%20%5Cbar%7Ba%7D%28t%29%20%3D%5Cbegin%7Bcases%7D%5Cbar%7Bl%7D%28t%29%20%3D%200.1%2Asin%282%20%5Cpi%20%2F%20%20%5Ctau%20%2A%20t%29%20%5C%20%5C%5C%5Cbar%7Bf%7D%28t%29%20%3D%200.2%2Asin%282%20%5Cpi%20%2F%20%20%5Ctau%20%2A%20t%29%20%5Cend%7Bcases%7D&bc=White&fc=Black&im=jpg&fs=12&ff=arev&edit=0" align="center" border="0" alt=" \bar{a}(t) =\begin{cases}\bar{l}(t) = 0.1*sin(2 \pi /  \tau * t) \ \\\bar{f}(t) = 0.2*sin(2 \pi /  \tau * t) \end{cases}" width="276" height="49" /> 
+
+The feedback component has very small bounds `[-0.01, 0.01]`. Ramp and sigmoid functions are used to 
+start and stop the gait gracefully.
+
+![](images/walk_ol.gif)
+
+### Inverse kinematic
+The gym environment is used to learn how to gracefully start the gait and then stop it after reaching the target position (on the `x` axis).
+It uses two-dimensional `action space` with a feedback component `π(o)` with bounds `[-0.4, 0.4]`. The feedback component is applied to two ramp functions 
+used to orchestrate the gait. A correct start contributes to void the drift effect generated by the gait in the resulted learned policy.
+
+![](images/walk_ik.gif)  
+
+## Basic Controls: Turn on the spot
+Goal: Reach a target orientation turning on the spot.
+In order to make the learning more robust, the Rex start orientation and target are randomly chosen at every 'Reset' step.
+
+### Open loop
+This environment is used to learn a 'steer-on-the-spot' gait, allowing Rex to moving towards a specific orientation. 
+It uses a two-dimensional `action space` with a small feedback component `π(o)` with bounds `[-0.05, 0.05]` to optimise the `shoulder` and `foot` angles
+during the gait. 
+
+![](images/turn_ol.gif)
+
+### Inverse kinematic
+The gym environment is used to optimise the `step_length` and `step_rotation` arguments used by the `GaitPlanner` to implement the 'steer' gait.
+It uses a two-dimensional `action space` with a feedback component `π(o)` with bounds `[-0.05, 0.05]`.
+
+![](images/turn_ik.gif)
+
+## Basic Controls: Stand up
+Goal: Stand up starting from the standby position
+This environment introduces the `rest_postion`, ideally the position assumed when Rex is in standby. 
+
+### Open loop
+The `action space` is equals to 1 with a feedback component `π(o)` with bounds `[-0.1, 0.1]` used to optimise the signal timing. 
+The signal function applies a 'brake' forcing Rex to assume an halfway position before completing the movement.
+
+![](images/standup_ol.gif)
+
+# Environments parameters
 | Environment | `env` flag | `arg` flag |
 | ----------- | ---------- | ---------- |
-| Galloping      | gallop | N.A |
-| Walking        | walk | `target_position` |
-| Turn (on spot) | turn | `init_orient`, `target_orient` |
-| Stand up       | standup | N.A |
+| Galloping | gallop | `target_position` |
+| Walking | walk | `target_position` |
+| Turn | turn | `init_orient`, `target_orient` |
+| Stand up | standup | N.A |
 
 | `arg` | Description |
 | ----- | ----------- |
@@ -60,21 +231,10 @@ rex-gym policy --env ENV_NAME
 | Flags | Description |
 | ----- | ----------- |
 | log-dir | The path where the log directory will be created. (Required) |
-| playground | A boolean to start a rendered single training session |
+| playground | A boolean to start a single training rendered session |
 | agents-number | Set the number of parallel agents |
 
-### Run a single training simulation
-To start a rendered single training session (`agents=1`, `render=True`):
-```
-rex-gym train --playground True --env ENV_NAME --log-dir LOG_DIR_PATH
-```
-### Start a new batch training simulation
-To start a new batch training session:
-```
-rex-gym train --env ENV_NAME --log-dir LOG_DIR_PATH
-```
-
-#### PPO Agent configuration
+## PPO Agent configuration
 You may want to edit the PPO agent's default configuration, especially the number of parallel agents launched during 
 the simulation.  
 
@@ -92,121 +252,18 @@ def default():
     num_agents = 20
 ```
 
-# Robot platform
-The robot used for this experiment is the [Spotmicro](https://www.thingiverse.com/thing:3445283) made by [Deok-yeon Kim](https://www.thingiverse.com/KDY0523/about).
-
-[<img src="https://thingiverse-production-new.s3.amazonaws.com/assets/bf/af/74/db/83/complete_4.jpg">](https://www.thingiverse.com/thing:3445283)
-
-I've printed the components using a Creality Ender3 3D printer, with PLA and TPU+.
-
-The idea is to extend the robot adding components like a robotic arm on the top of the rack and a LiDAR sensor.
-
-## Simulation model
-Rex is a 12 joints robot with 3 motors (`Shoulder`, `Leg` and `Foot`) for each leg. 
-The `poses signals` (see ```/model/rex.py```) set the 12 motor angles and allow Rex to stand up.
-
-The robot model is imported in `pyBullet` using an [URDF file](rex_gym/util/pybullet_data/assets/urdf/rex.urdf). 
-
-![rex bullet](rex_gym/util/images/rex.png)
-
-# Tasks
-This is the list of tasks this experiment will cover:
-
-1. Basic controls:
-    1. Static poses
-    2. Gallop/Walk straight on - forward/backward
-    3. Turn left/right on the spot
-    4. Stand up/Sit down
-    5. Side swipe
-2. Fall recovery
-3. Reach a specific point in a map
-5. Grab an object
-
-## Basic Controls: Static poses
-Goal: Move Rex base to assume static poses. 
-### Gym Environment
-This environment uses the `kinematics` model to train Rex to assume static poses. The model uses a `sigmoid function` to orchestrate the movement.
-When the render mode is active, it's possible to use the pybullet UI to set a specific pose.
-
-![](rex_gym/util/images/ik.gif)
-
-## Basic Controls: Run
-Goal: run straight on. 
-### Gym Environment
-There is a good number of papers on quadrupeds locomotion, some of them with sample code. Probably, the most complete collection 
-of examples is the [Minitaur folder](https://github.com/bulletphysics/bullet3/tree/master/examples/pybullet/gym/pybullet_envs/minitaur) in the Bullet3 repository. 
-For this task, the ```Minitaur Reactive Environment``` explained in the paper [Sim-to-Real: Learning Agile Locomotion For Quadruped Robots](https://arxiv.org/pdf/1804.10332.pdf)
-is a great example.
-
-#### Galloping gait - from scratch
-In this very first experiment, I let the system learn from scratch: giving the feedback component large output bounds `[−0.6,0.6]` radians.
-The `leg model` (see ```galloping_env.py```) forces legs and foots movements (positive or negative direction, depending on the leg) influencing the learning 
-score and time. In this first version, the `leg model` holds the Shoulder motors in the start position (0 degrees).  
-
-As in the Minitaur example, I'm using the Proximal Policy Optimization (PPO). 
-
-![](rex_gym/util/images/run.gif)
-
-The emerged galloping gait shows the chassis tilled up and some unusual positions/movements (especially starting from the initial pose) during the locomotion. The `leg model` needs improvements. 
-
-#### Galloping gait - bounded feedback
-To improve the gait, in this second simulation, I've worked on the `leg model`:
-
-![](rex_gym/util/images/leg_model_bounds.png) 
-
-I set bounds for both `Leg` and `Foot` angles, keeping the `Shoulder` in the initial position.
-
-![](rex_gym/util/images/galloping.gif)
-
-The emerged gait now looks more clear.
-
-#### Galloping gait - balanced feedback
-Another test was made using a balanced feedback:
-
-![](rex_gym/util/images/leg_model_improved.png) 
-
-The Action Space dimension is equals to 4, the same angle is assigned to both the front legs and a different one to the rear ones.
-The very same was done for the foot angles.
-
-The simulation score is massively improved (about 10x) as the learning time while the emerged gait is very similar to the `bounded feedback` model. 
-The Tensorflow score with this model, after ~500k attempts, is the same after ~4M attempts using any other models.
-
-## Basic Controls: Walk
-Goal: how to walk straight on.
-### Gym Environment
-Starting from  [Minitaur Alternating Leg](https://github.com/bulletphysics/bullet3/blob/master/examples/pybullet/gym/pybullet_envs/minitaur/envs/minitaur_alternating_legs_env.py)
-environment, I've used a sinusoidal signal as `leg_model` alternating the Rex legs during the locomotion. The feedback component has small 
-bounds [-0.1,0.1] as in the original script. 
-
-![](rex_gym/util/images/walk.gif)
-
-## Basic Controls: Turn left/right
-Goal: How to reach a certain orientation turning on the spot.
-### Gym Environment
-In this environment the `leg_model` applies a 'steer-on-the-spot' gait, allowing Rex to moving towards a specific orientation. 
-The reward function takes the chassis position/orientation and compares it with a fixed target position/orientation. 
-When this difference is less than 0.1 radiant, the `leg_model` is set to the stand up. In order to make the learning more robust, 
-the Rex starting orientation is randomly chosen (every 'Reset' step).
-
-![](rex_gym/util/images/turn.gif)
-
-## Basic Controls: Stand up
-Goal: Reach the base standing position starting from the rest position
-### Gym Environment
-This environment introduces the `rest_postion`, ideally the position assumed when Rex is in stand-by. 
-The `leg_model` is the `stand_low` position, while the `signal` function applies a 'brake' forcing Rex to assume an halfway position 
-before completing the movement.
-
-![](rex_gym/util/images/standup.gif)
-
 # Credits
+## Papers 
 [Sim-to-Real: Learning Agile Locomotion For Quadruped Robots](https://arxiv.org/pdf/1804.10332.pdf) and all the related papers. Google Brain, Google X, Google DeepMind - Minitaur Ghost Robotics.
 
+[Inverse Kinematic Analysis Of A Quadruped Robot](https://www.researchgate.net/publication/320307716_Inverse_Kinematic_Analysis_Of_A_Quadruped_Robot)
+
+[Leg Trajectory Planning for Quadruped Robots with High-Speed Trot Gait](https://www.researchgate.net/publication/332374021_Leg_Trajectory_Planning_for_Quadruped_Robots_with_High-Speed_Trot_Gait)
+
+## Inspiring projects
+The kinematics model was inspired by the great work done by [Miguel Ayuso](https://hackaday.io/project/171456-diy-hobby-servos-quadruped-robot).
+
+## Robot platform v1
 [Deok-yeon Kim](https://www.thingiverse.com/KDY0523/about) creator of SpotMini.
 
-The Kinematics model was largely inspired by the great work done by [Miguel Ayuso](https://hackaday.io/project/171456-diy-hobby-servos-quadruped-robot).
-
-[Inverse Kinematic Analysis Of A Quadruped Robot.](https://www.researchgate.net/publication/320307716_Inverse_Kinematic_Analysis_Of_A_Quadruped_Robot)
-
-The great work in rendering the robot platform done by the [SpotMicroAI](https://github.com/FlorianWilk/SpotMicroAI) community.
-
+SpotMicro CAD files: [SpotMicroAI](https://github.com/FlorianWilk/SpotMicroAI) community.

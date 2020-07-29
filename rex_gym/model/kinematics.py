@@ -8,22 +8,22 @@ class Kinematics:
         self._hip = 0.04
         self._leg = 0.1
         self._foot = 0.1
-        self._y_dist = 0.11
-        self._x_dist = self._l
-        self._height = 0.15
+        self.y_dist = 0.11
+        self.x_dist = self._l
+        self.height = 0.15
         # frame vectors
         self._hip_front_right_v = np.array([self._l / 2, -self._w / 2, 0])
         self._hip_front_left_v = np.array([self._l / 2, self._w / 2, 0])
         self._hip_rear_right_v = np.array([-self._l / 2, -self._w / 2, 0])
         self._hip_rear_left_v = np.array([-self._l / 2, self._w / 2, 0])
-        self._foot_front_right_v = np.array([self._x_dist / 2, -self._y_dist / 2, -self._height])
-        self._foot_front_left_v = np.array([self._x_dist / 2, self._y_dist / 2, -self._height])
-        self._foot_rear_right_v = np.array([-self._x_dist / 2, -self._y_dist / 2, -self._height])
-        self._foot_rear_left_v = np.array([-self._x_dist / 2, self._y_dist / 2, -self._height])
-        self._frames = np.asmatrix([[self._x_dist / 2, -self._y_dist / 2, -self._height],
-                              [self._x_dist / 2, self._y_dist / 2, -self._height],
-                              [-self._x_dist / 2, -self._y_dist / 2, -self._height],
-                              [-self._x_dist / 2, self._y_dist / 2, -self._height]])
+        self._foot_front_right_v = np.array([self.x_dist / 2, -self.y_dist / 2, -self.height])
+        self._foot_front_left_v = np.array([self.x_dist / 2, self.y_dist / 2, -self.height])
+        self._foot_rear_right_v = np.array([-self.x_dist / 2, -self.y_dist / 2, -self.height])
+        self._foot_rear_left_v = np.array([-self.x_dist / 2, self.y_dist / 2, -self.height])
+        self._frames = np.asmatrix([[self.x_dist / 2, -self.y_dist / 2, -self.height],
+                                    [self.x_dist / 2, self.y_dist / 2, -self.height],
+                                    [-self.x_dist / 2, -self.y_dist / 2, -self.height],
+                                    [-self.x_dist / 2, self.y_dist / 2, -self.height]])
 
     @staticmethod
     def get_Rx(x):
@@ -82,7 +82,7 @@ class Kinematics:
         if domain > 1 or domain < -1:
             if domain > 1:
                 domain = 0.99
-            elif domain < -1:
+            else:
                 domain = -0.99
         return domain
 
@@ -90,13 +90,14 @@ class Kinematics:
         domain = (coord[1] ** 2 + (-coord[2]) ** 2 - hip ** 2 + (-coord[0]) ** 2 - leg ** 2 - foot ** 2) / (2 * foot * leg)
         domain = self.check_domain(domain)
         gamma = np.arctan2(-np.sqrt(1 - domain ** 2), domain)
-        alpha = np.arctan2(-coord[0],
-                           np.sqrt(coord[1] ** 2 + (-coord[2]) ** 2 - hip ** 2)) - np.arctan2(foot * np.sin(gamma),
-                                                                                              leg + foot * np.cos(gamma))
+        sqrt_value = coord[1] ** 2 + (-coord[2]) ** 2 - hip ** 2
+        if sqrt_value < 0.0:
+            sqrt_value = 0.0
+        alpha = np.arctan2(-coord[0], np.sqrt(sqrt_value)) - np.arctan2(foot * np.sin(gamma), leg + foot * np.cos(gamma))
         hip_val = hip
         if right_side:
             hip_val = -hip
-        theta = -np.arctan2(coord[2], coord[1]) - np.arctan2(np.sqrt(coord[1] ** 2 + (-coord[2]) ** 2 - hip ** 2), hip_val)
+        theta = -np.arctan2(coord[2], coord[1]) - np.arctan2(np.sqrt(sqrt_value), hip_val)
         angles = np.array([theta, -alpha, -gamma])
         return angles
 

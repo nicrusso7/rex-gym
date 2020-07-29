@@ -53,11 +53,12 @@ class RexGymEnv(gym.Env):
     metadata = {"render.modes": ["human", "rgb_array"], "video.frames_per_second": 100}
 
     def __init__(self,
+                 debug=False,
                  urdf_root=pybullet_data.getDataPath(),
                  urdf_version=None,
                  distance_weight=1.0,
-                 energy_weight=0.005,
-                 shake_weight=0.0,
+                 energy_weight=0.0005,
+                 shake_weight=0.005,
                  drift_weight=2.0,
                  distance_limit=float("inf"),
                  observation_noise_stdev=SENSOR_NOISE_STDDEV,
@@ -67,8 +68,8 @@ class RexGymEnv(gym.Env):
                  leg_model_enabled=True,
                  accurate_motor_model_enabled=False,
                  remove_default_joint_damping=False,
-                 motor_kp=1.0,
-                 motor_kd=0.02,
+                 motor_kp=2.0,
+                 motor_kd=0.03,
                  control_latency=0.0,
                  pd_latency=0.0,
                  torque_control_enabled=False,
@@ -87,11 +88,16 @@ class RexGymEnv(gym.Env):
                  init_orient=None,
                  target_position=None,
                  start_position=None,
-                 base_y=None,
-                 base_z=None,
-                 base_roll=None,
-                 base_pitch=None,
-                 base_yaw=None):
+                 base_y=0.0,
+                 base_z=0.0,
+                 base_roll=0.0,
+                 base_pitch=0.0,
+                 base_yaw=0.0,
+                 step_length=None,
+                 step_rotation=None,
+                 step_angle=None,
+                 step_period=None,
+                 signal_type="ik"):
         """ Initialize the rex gym environment.
 
             Args:
@@ -131,8 +137,8 @@ class RexGymEnv(gym.Env):
                 is called. If set to false, reset just place Rex back to start
                 position and set its pose to initial configuration.
               on_rack: Whether to place Rex on rack. This is only used to debug
-                the walking gait. In this mode, Rex's base is hanged midair so
-                that its walking gait is clearer to visualize.
+                the walk gait. In this mode, Rex's base is hanged midair so
+                that its walk gait is clearer to visualize.
               render: Whether to render the simulation.
               num_steps_to_log: The max number of control steps in one episode that will
                 be logged. If the number of steps is more than num_steps_to_log, the
@@ -180,6 +186,7 @@ class RexGymEnv(gym.Env):
         self._env_step_counter = 0
         self._num_steps_to_log = num_steps_to_log
         self._is_render = render
+        self._is_debug = debug
         self._last_base_position = [0, 0, 0]
         self._last_base_orientation = [0, 0, 0, 1]
         self._distance_weight = distance_weight
@@ -219,10 +226,25 @@ class RexGymEnv(gym.Env):
         if self._urdf_version is None:
             self._urdf_version = DEFAULT_URDF_VERSION
         self._pybullet_client.setPhysicsEngineParameter(enableConeFriction=0)
+        self._signal_type = signal_type
+        # gait inputs
+        self.step_length = step_length
+        self.step_rotation = step_rotation
+        self.step_angle = step_angle
+        self.step_period = step_period
+        # poses inputs
+        self._base_x = 0.012
+        self._base_y = base_y
+        self._base_z = base_z
+        self._base_roll = base_roll
+        self._base_pitch = base_pitch
+        self._base_yaw = base_yaw
+        # envs inputs
         self._target_orient = target_orient
         self._init_orient = init_orient
         self._target_position = target_position
         self._start_position = start_position
+        # computation support params
         self._random_pos_target = False
         self._random_pos_start = False
         self._random_orient_target = False
@@ -237,11 +259,6 @@ class RexGymEnv(gym.Env):
             "pitch": (-np.pi / 4, np.pi / 4, 0),
             "yaw": (-np.pi / 4, np.pi / 4, 0)
         }
-        self._base_y = base_y
-        self._base_z = base_z
-        self._base_roll = base_roll
-        self._base_pitch = base_pitch
-        self._base_yaw = base_yaw
         self.seed()
         self.reset()
         observation_high = (self._get_observation_upper_bound() + OBSERVATION_EPS)
@@ -456,7 +473,7 @@ class RexGymEnv(gym.Env):
             print("FALLING DOWN!")
         if self._out_of_trajectory():
             print("OUT OF TRAJECTORY!")
-        return self.is_fallen() or self.env_goal_reached
+        return self.is_fallen() or self.env_goal_reached or self._out_of_trajectory()
 
     @staticmethod
     def _out_of_trajectory():
@@ -465,8 +482,21 @@ class RexGymEnv(gym.Env):
     def _reward(self):
         current_base_position = self.rex.GetBasePosition()
         # observation = self._get_observation()
-        # forward direction
-        forward_reward = -current_base_position[0] + self._last_base_position[0]
+        current_x = -current_base_position[0]
+        if self._target_position is not None:
+            # 0.15 tolerance
+            if current_x > self._target_position + 0.15:
+                forward_reward = self._target_position - current_x
+            elif self._target_position <= current_x <= self._target_position + 0.15:
+                forward_reward = 1.0
+            # stationary reward must be null: tolerance 5%
+            elif current_x <= 0.05:
+                forward_reward = 0.0
+            else:
+                forward_reward = current_x / self._target_position
+        else:
+            # the far the better..
+            forward_reward = current_x
         # Cap the forward reward if a cap is set.
         forward_reward = min(forward_reward, self._forward_reward_cap)
         # Penalty for sideways translation.

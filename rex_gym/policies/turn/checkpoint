@@ -1,5 +1,0 @@
-model_checkpoint_path: "/home/seven/dev/rex-policies/v2/turn/20200614T125415-turn/model.ckpt-2000000"
-all_model_checkpoint_paths: "/home/seven/dev/rex-policies/v2/turn/20200614T125415-turn/model.ckpt-500000"
-all_model_checkpoint_paths: "/home/seven/dev/rex-policies/v2/turn/20200614T125415-turn/model.ckpt-1000000"
-all_model_checkpoint_paths: "/home/seven/dev/rex-policies/v2/turn/20200614T125415-turn/model.ckpt-1500000"
-all_model_checkpoint_paths: "/home/seven/dev/rex-policies/v2/turn/20200614T125415-turn/model.ckpt-2000000"

@@ -9,9 +9,6 @@ import numpy as np
 from .. import rex_gym_env
 from ...model.rex import Rex
 
-STEP_PERIOD = 1.0 / 15.0  # 15 steps per second.
-STEP_AMPLITUDE = 0.25
-
 NUM_LEGS = 4
 NUM_MOTORS = 3 * NUM_LEGS
 
@@ -29,9 +26,10 @@ class RexStandupEnv(rex_gym_env.RexGymEnv):
     metadata = {"render.modes": ["human", "rgb_array"], "video.frames_per_second": 66}
 
     def __init__(self,
+                 debug=False,
                  urdf_version=None,
-                 control_time_step=0.006,
-                 action_repeat=6,
+                 control_time_step=0.005,
+                 action_repeat=5,
                  control_latency=0,
                  pd_latency=0,
                  on_rack=False,
@@ -41,7 +39,8 @@ class RexStandupEnv(rex_gym_env.RexGymEnv):
                  render=False,
                  num_steps_to_log=1000,
                  env_randomizer=None,
-                 log_path=None):
+                 log_path=None,
+                 signal_type="ol"):
         """Initialize the rex alternating legs gym environment.
 
     Args:
@@ -55,8 +54,8 @@ class RexStandupEnv(rex_gym_env.RexGymEnv):
       pd_latency: The latency used to get motor angles/velocities used to
         compute PD controllers. See rex.py for more details.
       on_rack: Whether to place the rex on rack. This is only used to debug
-        the walking gait. In this mode, the rex's base is hung midair so
-        that its walking gait is clearer to visualize.
+        the walk gait. In this mode, the rex's base is hung midair so
+        that its walk gait is clearer to visualize.
       motor_kp: The P gain of the motor.
       motor_kd: The D gain of the motor.
       remove_default_joint_damping: Whether to remove the default joint damping.
@@ -86,36 +85,34 @@ class RexStandupEnv(rex_gym_env.RexGymEnv):
                              env_randomizer=env_randomizer,
                              log_path=log_path,
                              control_time_step=control_time_step,
-                             action_repeat=action_repeat)
+                             action_repeat=action_repeat,
+                             signal_type=signal_type,
+                             debug=debug)
 
-        action_dim = 12
+        action_dim = 1
         action_high = np.array([0.1] * action_dim)
         self.action_space = spaces.Box(-action_high, action_high)
         self._cam_dist = 1.0
         self._cam_yaw = 30
         self._cam_pitch = -30
-        self.stand = False
         if self._on_rack:
             self._cam_pitch = 0
 
     def reset(self):
-        self.desired_pitch = 0
         super(RexStandupEnv, self).reset(initial_motor_angles=Rex.INIT_POSES['rest_position'],
                                          reset_duration=0.5)
         return self._get_observation()
 
-    def _signal(self, t):
-        if t > 0.2:
-            self.stand = True
-            return self.rex.INIT_POSES['stand_low']
+    def _signal(self, t, action):
+        if t > 0.1:
+            return self.rex.INIT_POSES['stand']
         t += 1
         # apply a 'brake' function
-        signal = self.rex.INIT_POSES['stand_low'] * (0.1 / t + 1.5)
+        signal = self.rex.INIT_POSES['stand'] * ((.1 + action[0]) / t + 1.5)
         return signal
 
-    def _convert_from_leg_model(self, leg_pose):
-        if self.stand:
-            return self.rex.INIT_POSES['stand_low']
+    @staticmethod
+    def _convert_from_leg_model(leg_pose):
         motor_pose = np.zeros(NUM_MOTORS)
         for i in range(NUM_LEGS):
             motor_pose[3 * i] = leg_pose[3 * i]
@@ -124,7 +121,7 @@ class RexStandupEnv(rex_gym_env.RexGymEnv):
         return motor_pose
 
     def _transform_action_to_motor_command(self, action):
-        action += self._signal(self.rex.GetTimeSinceReset())
+        action = self._signal(self.rex.GetTimeSinceReset(), action)
         action = self._convert_from_leg_model(action)
         return action
 
@@ -147,29 +144,19 @@ class RexStandupEnv(rex_gym_env.RexGymEnv):
 
     def _reward(self):
         # target position
-        t_pos = [0.0, 0.0, 0.225]
+        t_pos = [0.0, 0.0, 0.21]
 
         current_base_position = self.rex.GetBasePosition()
 
         position_reward = abs(t_pos[0] - current_base_position[0]) + \
                           abs(t_pos[1] - current_base_position[1]) + \
                           abs(t_pos[2] - current_base_position[2])
-
-        is_pos = False
-
         if abs(position_reward) < 0.1:
             position_reward = 1.0 - position_reward
-            is_pos = True
         else:
             position_reward = -position_reward
-
         if current_base_position[2] > t_pos[2]:
-            position_reward = -1000 - position_reward
-            print("jump!")
-
-        if is_pos:
-            self.goal_reached = True
-
+            position_reward = -1.0 - position_reward
         reward = position_reward
         return reward
 
@@ -186,7 +173,6 @@ class RexStandupEnv(rex_gym_env.RexGymEnv):
         roll, pitch, _ = self.rex.GetTrueBaseRollPitchYaw()
         roll_rate, pitch_rate, _ = self.rex.GetTrueBaseRollPitchYawRate()
         observation.extend([roll, pitch, roll_rate, pitch_rate])
-        observation[1] -= self.desired_pitch  # observation[1] is the pitch
         self._true_observation = np.array(observation)
         return self._true_observation
 
@@ -195,7 +181,6 @@ class RexStandupEnv(rex_gym_env.RexGymEnv):
         roll, pitch, _ = self.rex.GetBaseRollPitchYaw()
         roll_rate, pitch_rate, _ = self.rex.GetBaseRollPitchYawRate()
         observation.extend([roll, pitch, roll_rate, pitch_rate])
-        observation[1] -= self.desired_pitch  # observation[1] is the pitch
         self._observation = np.array(observation)
         return self._observation
 
@@ -214,31 +199,3 @@ class RexStandupEnv(rex_gym_env.RexGymEnv):
     def _get_observation_lower_bound(self):
         lower_bound = -self._get_observation_upper_bound()
         return lower_bound
-
-    def set_swing_offset(self, value):
-        """Set the swing offset of each leg.
-
-    It is to mimic the bent leg.
-
-    Args:
-      value: A list of four values.
-    """
-        self._swing_offset = value
-
-    def set_extension_offset(self, value):
-        """Set the extension offset of each leg.
-
-    It is to mimic the bent leg.
-
-    Args:
-      value: A list of four values.
-    """
-        self._extension_offset = value
-
-    def set_desired_pitch(self, value):
-        """Set the desired pitch of the base, which is a user input.
-
-    Args:
-      value: A scalar.
-    """
-        self.desired_pitch = value

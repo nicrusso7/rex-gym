@@ -64,8 +64,8 @@ class RexPosesEnv(rex_gym_env.RexGymEnv):
       pd_latency: The latency used to get motor angles/velocities used to
         compute PD controllers. See rex.py for more details.
       on_rack: Whether to place the rex on rack. This is only used to debug
-        the walking gait. In this mode, the rex's base is hung midair so
-        that its walking gait is clearer to visualize.
+        the walk gait. In this mode, the rex's base is hung midair so
+        that its walk gait is clearer to visualize.
       motor_kp: The P gain of the motor.
       motor_kd: The D gain of the motor.
       remove_default_joint_damping: Whether to remove the default joint damping.
@@ -148,7 +148,8 @@ class RexPosesEnv(rex_gym_env.RexGymEnv):
                 self.load_ui = False
                 self.manual_control = True
         else:
-            if self._base_y or self._base_z or self._base_roll or self._base_pitch or self._base_yaw:
+            if self._base_y != 0.0 or self._base_z != 0.0 or self._base_roll != 0.0 \
+                    or self._base_pitch != 0.0 or self._base_yaw != 0.0:
                 self.fill_next_pose_and_target()
             else:
                 self.next_pose = self._queue.popleft()
@@ -159,20 +160,25 @@ class RexPosesEnv(rex_gym_env.RexGymEnv):
         return self._get_observation()
 
     def fill_next_pose_and_target(self):
-        self.target_value = self._base_y or self._base_z or self._base_roll or self._base_pitch or self._base_yaw
-        if self._base_y:
+        if self._base_y != 0.0:
             self.next_pose = "base_y"
-        elif self._base_z:
+            self.target_value = self._base_y
+        elif self._base_z != 0.0:
             self.next_pose = "base_z"
-        elif self._base_roll:
+            self.target_value = self._base_z
+        elif self._base_roll != 0.0:
             self.next_pose = "roll"
-        elif self._base_pitch:
+            self.target_value = self._base_roll
+        elif self._base_pitch != 0.0:
             self.next_pose = "pitch"
+            self.target_value = self._base_pitch
         else:
             self.next_pose = "yaw"
+            self.target_value = self._base_yaw
 
     @staticmethod
     def _evaluate_stage_coefficient(t, action):
+        # sigmoid function
         beta = p = 1.5 + action[0]
         if p - beta <= t <= p - (beta/2):
             return (2 / beta ** 2) * (t - p + beta) ** 2

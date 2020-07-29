@@ -1,0 +1,42 @@
+!!python/object/new:rex_gym.agents.tools.attr_dict.AttrDict
+dictitems:
+  algorithm: !!python/name:rex_gym.agents.ppo.algorithm.PPOAlgorithm ''
+  discount: 0.985
+  env: !!python/object/apply:functools.partial
+    args:
+    - &id001 !!python/name:rex_gym.envs.gym.gallop_env.RexReactiveEnv ''
+    state: !!python/tuple
+    - *id001
+    - !!python/tuple []
+    - render: true
+    - null
+  eval_episodes: 25
+  init_logstd: -1
+  init_mean_factor: 0.05
+  kl_cutoff_coef: 1000
+  kl_cutoff_factor: 2
+  kl_init_penalty: 1
+  kl_target: 0.01
+  logdir: /
+  max_length: 1000
+  network: !!python/name:rex_gym.agents.scripts.networks.ForwardGaussianPolicy ''
+  num_agents: 20
+  policy_layers: &id001 !!python/tuple
+  - 200
+  - 100
+  policy_lr: 0.0001
+  policy_optimizer: AdamOptimizer
+  steps: 10000000.0
+  update_epochs_policy: 50
+  update_epochs_value: 50
+  update_every: 25
+  use_gpu: false
+  value_layers: *id001
+  value_lr: 0.0003
+  value_optimizer: AdamOptimizer
+  weight_summaries:
+    all: .*
+    policy: .*/policy/.*
+    value: .*/value/.*
+state:
+  _mutable: false

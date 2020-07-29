@@ -49,43 +49,73 @@ def default():
     return locals()
 
 
-def gallop():
-    """Configuration for Rex galloping task."""
+def gallop_ik():
+    """Configuration for Rex gallop task based on inverse kinematics controller."""
     locals().update(default())
     # Environment
     env = 'RexGalloping-v0'
-    max_length = 1000
-    steps = 5e6  # 5M
+    max_length = 2000
+    steps = 1e6  # 1M
     return locals()
 
 
-def walk():
-    """Configuration for Rex walking task."""
+def gallop_ol():
+    """Configuration for Rex gallop task based on open loop controller."""
+    locals().update(default())
+    # Environment
+    env = 'RexGalloping-v0'
+    max_length = 2000
+    steps = 2e6  # 2M
+    return locals()
+
+
+def walk_ol():
+    """Configuration for Rex walk task based on open loop controller."""
     locals().update(default())
     # Environment
     env = 'RexWalk-v0'
-    max_length = 2500
-    steps = 5e6  # 5M
+    max_length = 2000
+    steps = 2e6  # 2M
     return locals()
 
 
-def turn():
+def walk_ik():
+    """Configuration for Rex walk task based on inverse kinematics controller."""
+    locals().update(default())
+    # Environment
+    env = 'RexWalk-v0'
+    max_length = 2000
+    steps = 1e6  # 1M
+    return locals()
+
+
+def turn_ol():
     """Configuration for Rex turn task."""
     locals().update(default())
     # Environment
     env = 'RexTurn-v0'
     max_length = 1000
-    steps = 3e6  # 3M
+    steps = 1e6  # 1M
     return locals()
 
 
-def standup():
+def turn_ik():
+    """Configuration for Rex turn task."""
+    locals().update(default())
+    # Environment
+    env = 'RexTurn-v0'
+    max_length = 1000
+    steps = 1e6  # 1M
+    return locals()
+
+
+def standup_ol():
     """Configuration for Rex stand up task."""
     locals().update(default())
     # Environment
     env = 'RexStandup-v0'
-    max_length = 1000
-    steps = 5e6  # 5M
+    max_length = 500
+    steps = 1e6  # 1M
     return locals()
 
 

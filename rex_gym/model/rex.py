@@ -55,6 +55,12 @@ class Rex(object):
             0.15192765, -0.90412283, 1.48156545,
             -0.15192765, -0.90412283, 1.48156545
         ]),
+        'gallop': np.array([
+            0.15192765, -0.90412283, 1.48156545,
+            -0.15192765, -0.90412283, 1.48156545,
+            0.15192765, -0.90412283, 1.48156545,
+            -0.15192765, -0.90412283, 1.48156545
+        ]),
         'stand_low': np.array([
             0.1, -0.82, 1.35,
             -0.1, -0.82, 1.35,
@@ -66,12 +72,6 @@ class Rex(object):
             0, -0.658319, 1.0472,
             0, -0.658319, 1.0472,
             0, -0.658319, 1.0472
-        ]),
-        'jump_pose': np.array([
-            0, -0.628319, 1.0472,
-            0, -0.628319, 1.0472,
-            0, -0.628319, 1.0472,
-            0, -0.628319, 1.0472
         ]),
         'rest_position': np.array([
             -0.4, -1.5, 6,
@@ -132,8 +132,8 @@ class Rex(object):
             (OVERHEAT_SHUTDOWN_TIME). See ApplyAction() in rex.py for more
             details.
           on_rack: Whether to place the Rex on rack. This is only used to debug
-            the walking gait. In this mode, the Rex's base is hanged midair so
-            that its walking gait is clearer to visualize.
+            the walk gait. In this mode, the Rex's base is hanged midair so
+            that its walk gait is clearer to visualize.
         """
         self.num_motors = 12
         self.num_legs = 4
