@@ -85,8 +85,7 @@ The servo motors are modelled in the `model/motor.py` class.
 ![rex bullet](images/rex.png)
 
 # Learning approach
-This library uses the `Proximal Policy Optimization (PPO)` algorithm with a hybrid policy defined as: <img src="http://www.sciweavers.org/tex2img.php?eq=a%28t%2C%20o%29%20%3D%20%20%5Cbar%7Ba%7D%28t%29%20%2B%20%20%5Cpi%28o%29&bc=White&fc=Black&im=jpg&fs=12&ff=arev&edit=0" align="center" border="0" alt="a(t, o) =  \bar{a}(t) +  \pi(o)" width="164" height="18" />
-
+This library uses the `Proximal Policy Optimization (PPO)` algorithm with a hybrid policy defined as: `a(t, o) = a(t) + π(o)`
 It can be varied continuously from fully user-specified to entirely learned from scratch. 
 If we want to use a user-specified policy, we can set both the lower and the upper bounds of `π(o)` to be zero. 
 If we want a policy that is learned from scratch, we can set `a(t) = 0` and give the feedback component `π(o)` a wide output range.
@@ -154,6 +153,8 @@ When the `--playground` flag is used, it's possible to use the pyBullet UI to ma
 ## Basic Controls: Gallop
 Goal: Gallop straight on and stop at a desired position.
 
+In order to make the learning more robust, the Rex target position is randomly chosen at every 'Reset' step.
+
 ### Open loop
 The gym environment is used to let the system learn the gait from scratch. The `action space` has 4 dimensions, two for the front legs and foots 
 and two for the rear legs and foots, with the feedback component output bounds `[−0.3, 0.3]`.
@@ -170,11 +171,15 @@ used to orchestrate the gait. A correct start contributes to void the drift effe
 ## Basic Controls: Walk
 Goal: Walk straight on and stop at a desired position.
 
+In order to make the learning more robust, the Rex target position is randomly chosen at every 'Reset' step.
+
 ### Open loop
 The gym environment use a sinusoidal open loop signal to alternate the Rex legs during the gait. 
 
-<img src="http://www.sciweavers.org/tex2img.php?eq=%20%5Cbar%7Ba%7D%28t%29%20%3D%5Cbegin%7Bcases%7D%5Cbar%7Bl%7D%28t%29%20%3D%200.1%2Asin%282%20%5Cpi%20%2F%20%20%5Ctau%20%2A%20t%29%20%5C%20%5C%5C%5Cbar%7Bf%7D%28t%29%20%3D%200.2%2Asin%282%20%5Cpi%20%2F%20%20%5Ctau%20%2A%20t%29%20%5Cend%7Bcases%7D&bc=White&fc=Black&im=jpg&fs=12&ff=arev&edit=0" align="center" border="0" alt=" \bar{a}(t) =\begin{cases}\bar{l}(t) = 0.1*sin(2 \pi /  \tau * t) \ \\\bar{f}(t) = 0.2*sin(2 \pi /  \tau * t) \end{cases}" width="276" height="49" /> 
-
+```
+leg(t) = 0.1 cos(2π/T*t)
+foot(t) = 0.2 cos(2π/T*t)
+```
 The feedback component has very small bounds `[-0.01, 0.01]`. Ramp and sigmoid functions are used to 
 start and stop the gait gracefully.
 
@@ -189,6 +194,7 @@ used to orchestrate the gait. A correct start contributes to void the drift effe
 
 ## Basic Controls: Turn on the spot
 Goal: Reach a target orientation turning on the spot.
+
 In order to make the learning more robust, the Rex start orientation and target are randomly chosen at every 'Reset' step.
 
 ### Open loop
