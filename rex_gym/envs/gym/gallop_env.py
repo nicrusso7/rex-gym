@@ -109,7 +109,7 @@ class RexReactiveEnv(rex_gym_env.RexGymEnv):
                              debug=debug)
         # (eventually) allow different feedback ranges/action spaces for different signals
         action_max = {
-            'ik': 0.3,
+            'ik': 0.4,
             'ol': 0.3
         }
         action_dim_map = {
@@ -276,9 +276,9 @@ class RexReactiveEnv(rex_gym_env.RexGymEnv):
 
     def _open_loop_signal(self, t, leg_pose):
         if self.goal_reached:
-            coeff = self._evaluate_brakes_stage_coeff(t, [1.0], end_t=self.end_time, end_value=0.0001)
+            coeff = self._evaluate_brakes_stage_coeff(t, [.0], end_t=self.end_time, end_value=0.0)
             leg_pose *= coeff
-            if coeff is 0.0001:
+            if coeff is 0.0:
                 self._stay_still = True
         motor_pose = np.zeros(NUM_MOTORS)
         for i in range(NUM_LEGS):

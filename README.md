@@ -39,7 +39,7 @@ message for a specific command.
 
 Use the `--arg` flag to eventually set the simulation arguments. For a full list check out the [environments parameters](#environments-parameters).
 
-To switch between the `open loop` and the `inverse kinematics controller` modes, just append the either `--open-loop` or `--inverse-kinematics` flags.
+To switch between the `open loop` and the `inverse kinematics controller` modes, just append either the `--open-loop` or `--inverse-kinematics` flags.
 ```
 rex-gym COMMAND_NAME -ik
 rex-gym COMMAND_NAME -ol
@@ -85,7 +85,10 @@ The servo motors are modelled in the `model/motor.py` class.
 ![rex bullet](images/rex.png)
 
 # Learning approach
-This library uses the `Proximal Policy Optimization (PPO)` algorithm with a hybrid policy defined as: `a(t, o) = a(t) + π(o)`
+This library uses the `Proximal Policy Optimization (PPO)` algorithm with a hybrid policy defined as: 
+
+```a(t, o) = a(t) + π(o)```
+
 It can be varied continuously from fully user-specified to entirely learned from scratch. 
 If we want to use a user-specified policy, we can set both the lower and the upper bounds of `π(o)` to be zero. 
 If we want a policy that is learned from scratch, we can set `a(t) = 0` and give the feedback component `π(o)` a wide output range.
