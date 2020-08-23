@@ -29,6 +29,7 @@ class RexGoEnv(rex_gym_env.RexGymEnv):
     metadata = {"render.modes": ["human", "rgb_array"], "video.frames_per_second": 66}
 
     def __init__(self,
+                 debug=False,
                  urdf_version=None,
                  control_time_step=0.005,
                  action_repeat=5,
@@ -43,7 +44,8 @@ class RexGoEnv(rex_gym_env.RexGymEnv):
                  log_path=None,
                  start_position=None,
                  target_position=None,
-                 init_orient=None):
+                 init_orient=None,
+                 signal_type='ol'):
         """Initialize the rex go to gym environment.
 
         Args:
@@ -88,7 +90,9 @@ class RexGoEnv(rex_gym_env.RexGymEnv):
             log_path=log_path,
             control_time_step=control_time_step,
             action_repeat=action_repeat,
-            init_orient=init_orient)
+            init_orient=init_orient,
+            signal_type=signal_type,
+            debug=debug)
 
         action_dim = 12
         action_high = np.array([0.0] * action_dim)
@@ -151,13 +155,13 @@ class RexGoEnv(rex_gym_env.RexGymEnv):
         turn_graph = tf.Graph()
         with turn_graph.as_default():
             gym_dir_path = str(site.getsitepackages()[0])
-            policy_dir = os.path.join(gym_dir_path, action_mapper.ENV_ID_TO_POLICY['turn'][0])
+            policy_dir = os.path.join(gym_dir_path, action_mapper.ENV_ID_TO_POLICY['turn_ol'][0])
             config = utility.load_config(policy_dir)
             policy_layers = config.policy_layers
             value_layers = config.value_layers
             self.turn_env = config.env(render=False, init_orient=self._init_orient, target_orient=target_orient)
             network = config.network
-            checkpoint = os.path.join(policy_dir, action_mapper.ENV_ID_TO_POLICY['turn'][1])
+            checkpoint = os.path.join(policy_dir, action_mapper.ENV_ID_TO_POLICY['turn_ol'][1])
             self.turn_agent = simple_ppo_agent.SimplePPOPolicy(tf.compat.v1.Session(graph=turn_graph),
                                                                self.turn_env,
                                                                network,
@@ -170,13 +174,13 @@ class RexGoEnv(rex_gym_env.RexGymEnv):
         walk_graph = tf.Graph()
         with walk_graph.as_default():
             gym_dir_path = str(site.getsitepackages()[0])
-            policy_dir = os.path.join(gym_dir_path, action_mapper.ENV_ID_TO_POLICY['walk'][0])
+            policy_dir = os.path.join(gym_dir_path, action_mapper.ENV_ID_TO_POLICY['walk_ol'][0])
             config = utility.load_config(policy_dir)
             policy_layers = config.policy_layers
             value_layers = config.value_layers
             self.walk_env = config.env(render=False, target_position=self._target_position[0])
             network = config.network
-            checkpoint = os.path.join(policy_dir, action_mapper.ENV_ID_TO_POLICY['walk'][1])
+            checkpoint = os.path.join(policy_dir, action_mapper.ENV_ID_TO_POLICY['walk_ol'][1])
             self.walk_agent = simple_ppo_agent.SimplePPOPolicy(tf.compat.v1.Session(graph=walk_graph),
                                                                self.walk_env,
                                                                network,

@@ -264,10 +264,10 @@ class RexWalkEnv(rex_gym_env.RexGymEnv):
         l_a = 0.1
         f_a = 0.2
         if self.goal_reached:
-            coeff = self._evaluate_brakes_stage_coeff(t, [0.0, 0.0], end_t=self.end_time, end_value=0.0001)
+            coeff = self._evaluate_brakes_stage_coeff(t, [0.0, 0.0], end_t=self.end_time, end_value=0.0)
             l_a *= coeff
             f_a *= coeff
-            if coeff is 0.0001:
+            if coeff is 0.0:
                 self._stay_still = True
         start_coeff = self._evaluate_gait_stage_coeff(t, [0.0])
         l_a *= start_coeff
