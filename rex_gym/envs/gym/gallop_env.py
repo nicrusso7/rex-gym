@@ -132,12 +132,15 @@ class RexReactiveEnv(rex_gym_env.RexGymEnv):
         self.is_terminating = False
 
     def reset(self):
-        super(RexReactiveEnv, self).reset()
+        self.init_pose = Rex.INIT_POSES["stand"]
+        if self._signal_type == 'ol':
+            self.init_pose = Rex.INIT_POSES["stand_ol"]
+        super(RexReactiveEnv, self).reset(initial_motor_angles=self.init_pose, reset_duration=0.5)
         self.goal_reached = False
         self._stay_still = False
         self.is_terminating = False
         if not self._target_position or self._random_pos_target:
-            self._target_position = random.uniform(1, 3.5)
+            self._target_position = random.uniform(1, 3)
             self._random_pos_target = True
         if self._is_render and self._signal_type == 'ik':
             if self.load_ui:
@@ -151,7 +154,7 @@ class RexReactiveEnv(rex_gym_env.RexGymEnv):
         self.base_x_ui = self._pybullet_client.addUserDebugParameter("base_x",
                                                                      self._ranges["base_x"][0],
                                                                      self._ranges["base_x"][1],
-                                                                     0.016)
+                                                                     0.01)
         self.base_y_ui = self._pybullet_client.addUserDebugParameter("base_y",
                                                                      self._ranges["base_y"][0],
                                                                      self._ranges["base_y"][1],
@@ -159,7 +162,7 @@ class RexReactiveEnv(rex_gym_env.RexGymEnv):
         self.base_z_ui = self._pybullet_client.addUserDebugParameter("base_z",
                                                                      self._ranges["base_z"][0],
                                                                      self._ranges["base_z"][1],
-                                                                     0.002)
+                                                                     -0.007)
         self.roll_ui = self._pybullet_client.addUserDebugParameter("roll",
                                                                    self._ranges["roll"][0],
                                                                    self._ranges["roll"][1],
@@ -172,17 +175,17 @@ class RexReactiveEnv(rex_gym_env.RexGymEnv):
                                                                   self._ranges["yaw"][0],
                                                                   self._ranges["yaw"][1],
                                                                   self._ranges["yaw"][2])
-        self.step_length_ui = self._pybullet_client.addUserDebugParameter("step_length", -0.7, 1.5,  0.75)
+        self.step_length_ui = self._pybullet_client.addUserDebugParameter("step_length", -0.7, 1.5,  1.3)
         self.step_rotation_ui = self._pybullet_client.addUserDebugParameter("step_rotation", -1.5, 1.5, 0.)
         self.step_angle_ui = self._pybullet_client.addUserDebugParameter("step_angle", -180., 180., 0.)
-        self.step_period_ui = self._pybullet_client.addUserDebugParameter("step_period", 0.1, .9, 0.25)
+        self.step_period_ui = self._pybullet_client.addUserDebugParameter("step_period", 0.1, .9, 0.3)
 
     def _read_inputs(self, base_pos_coeff, gait_stage_coeff):
         position = np.array(
             [
                 self._pybullet_client.readUserDebugParameter(self.base_x_ui),
                 self._pybullet_client.readUserDebugParameter(self.base_y_ui) * base_pos_coeff,
-                self._pybullet_client.readUserDebugParameter(self.base_z_ui) * base_pos_coeff
+                self._pybullet_client.readUserDebugParameter(self.base_z_ui)
             ]
         )
         orientation = np.array(
@@ -201,6 +204,7 @@ class RexReactiveEnv(rex_gym_env.RexGymEnv):
     def _check_target_position(self, t):
         if self._target_position:
             current_x = abs(self.rex.GetBasePosition()[0])
+            # give 0.15 stop space
             if current_x >= abs(self._target_position):
                 self.goal_reached = True
                 if not self.is_terminating:
@@ -221,7 +225,7 @@ class RexReactiveEnv(rex_gym_env.RexGymEnv):
     @staticmethod
     def _evaluate_brakes_stage_coeff(current_t, action, end_t=0.0, end_value=0.0):
         # ramp function
-        p = 0.9 + action[0]
+        p = .9 + action[0]
         if end_t <= current_t <= p + end_t:
             return 1 - (current_t - end_t)
         else:
@@ -230,7 +234,7 @@ class RexReactiveEnv(rex_gym_env.RexGymEnv):
     @staticmethod
     def _evaluate_gait_stage_coeff(current_t, action, end_t=0.0):
         # ramp function
-        p = 0.8 + action[1]
+        p = 1. + action[1]
         if end_t <= current_t <= p + end_t:
             return current_t
         else:
@@ -249,22 +253,22 @@ class RexReactiveEnv(rex_gym_env.RexGymEnv):
             position, orientation, step_length, step_rotation, step_angle, step_period = \
                 self._read_inputs(base_pos_coeff, gait_stage_coeff)
         else:
-            position = np.array([0.016,
+            position = np.array([0.01,
                                  self._base_y * base_pos_coeff,
-                                 0.002])
+                                 -0.007])
             orientation = np.array([self._base_roll * base_pos_coeff,
                                     self._base_pitch * base_pos_coeff,
                                     self._base_yaw * base_pos_coeff])
-            step_length = (self.step_length if self.step_length is not None else 0.75) * gait_stage_coeff
+            step_length = (self.step_length if self.step_length is not None else 1.3) * gait_stage_coeff
             step_rotation = (self.step_rotation if self.step_rotation is not None else 0.0)
             step_angle = self.step_angle if self.step_angle is not None else 0.0
-            step_period = (self.step_period if self.step_period is not None else 0.25)
+            step_period = (self.step_period if self.step_period is not None else 0.3)
         if self.goal_reached:
             brakes_coeff = self._evaluate_brakes_stage_coeff(t, action, self.end_time)
             step_length *= brakes_coeff
             if brakes_coeff == 0.0:
                 self._stay_still = True
-        frames = self._gait_planner.loop(step_length, step_angle, step_rotation, step_period)
+        frames = self._gait_planner.loop(step_length, step_angle, step_rotation, step_period, 1.0)
         fr_angles, fl_angles, rr_angles, rl_angles, _ = self._kinematics.solve(orientation, position, frames)
         signal = [
             fl_angles[0], fl_angles[1], fl_angles[2],
@@ -282,9 +286,9 @@ class RexReactiveEnv(rex_gym_env.RexGymEnv):
                 self._stay_still = True
         motor_pose = np.zeros(NUM_MOTORS)
         for i in range(NUM_LEGS):
-            motor_pose[int(3 * i)] = self.rex.initial_pose[3 * i]
-            init_leg = self.rex.initial_pose[3 * i + 1]
-            init_foot = self.rex.initial_pose[3 * i + 2]
+            motor_pose[int(3 * i)] = self.init_pose[3 * i]
+            init_leg = self.init_pose[3 * i + 1]
+            init_foot = self.init_pose[3 * i + 2]
             if i == 0 or i == 1:
                 motor_pose[int(3 * i + 1)] = init_leg + leg_pose[0]
                 motor_pose[int(3 * i + 2)] = init_foot + leg_pose[1]

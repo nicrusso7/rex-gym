@@ -129,11 +129,11 @@ def go():
     return locals()
 
 
-def poses():
-    """Configuration for Rex go-to task."""
+def poses_ik():
+    """Configuration for Rex reach-a-pose task."""
     locals().update(default())
     # Environment
     env = 'RexPoses-v0'
     max_length = 1000
-    steps = 5e6  # 5M
+    steps = 1e6  # 1M
     return locals()

@@ -97,6 +97,7 @@ class RexGymEnv(gym.Env):
                  step_rotation=None,
                  step_angle=None,
                  step_period=None,
+                 backwards=None,
                  signal_type="ik"):
         """ Initialize the rex gym environment.
 
@@ -233,7 +234,7 @@ class RexGymEnv(gym.Env):
         self.step_angle = step_angle
         self.step_period = step_period
         # poses inputs
-        self._base_x = 0.012
+        self._base_x = 0.01
         self._base_y = base_y
         self._base_z = base_z
         self._base_roll = base_roll
@@ -252,7 +253,7 @@ class RexGymEnv(gym.Env):
         self._companion_obj = {}
         self._queue = collections.deque(["base_y", "base_z", "roll", "pitch", "yaw"])
         self._ranges = {
-            "base_x": (-0.001, 0.02, 0.012),
+            "base_x": (-0.02, 0.02, 0.01),
             "base_y": (-0.007, 0.007, 0),
             "base_z": (-0.048, 0.021, 0),
             "roll": (-np.pi / 4, np.pi / 4, 0),
@@ -260,6 +261,7 @@ class RexGymEnv(gym.Env):
             "yaw": (-np.pi / 4, np.pi / 4, 0)
         }
         self.seed()
+        self._backwards = backwards
         self.reset()
         observation_high = (self._get_observation_upper_bound() + OBSERVATION_EPS)
         observation_low = (self._get_observation_lower_bound() - OBSERVATION_EPS)
@@ -482,8 +484,13 @@ class RexGymEnv(gym.Env):
     def _reward(self):
         current_base_position = self.rex.GetBasePosition()
         # observation = self._get_observation()
+        # forward gait
         current_x = -current_base_position[0]
+        if self._backwards:
+            # backwards gait
+            current_x = -current_x
         if self._target_position is not None:
+            self._target_position = abs(self._target_position)
             # 0.15 tolerance
             if current_x > self._target_position + 0.15:
                 forward_reward = self._target_position - current_x
@@ -515,6 +522,7 @@ class RexGymEnv(gym.Env):
         weighted_objectives = [o * w for o, w in zip(objectives, self._objective_weights)]
         reward = sum(weighted_objectives)
         self._objectives.append(objectives)
+        print(reward)
         return reward
 
     def get_objectives(self):

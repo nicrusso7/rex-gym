@@ -1,6 +1,6 @@
-numpy
-pybullet
-gym
+numpy==1.17.3
+pybullet==2.8.3
+gym==0.17.1
 tensorflow==1.15.3
 ruamel.yaml
 click

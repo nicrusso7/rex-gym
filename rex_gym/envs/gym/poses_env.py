@@ -33,6 +33,7 @@ class RexPosesEnv(rex_gym_env.RexGymEnv):
     manual_control = False
 
     def __init__(self,
+                 debug=False,
                  urdf_version=None,
                  control_time_step=0.006,
                  action_repeat=6,
@@ -50,7 +51,8 @@ class RexPosesEnv(rex_gym_env.RexGymEnv):
                  base_z=None,
                  base_roll=None,
                  base_pitch=None,
-                 base_yaw=None):
+                 base_yaw=None,
+                 signal_type='ik'):
         """Initialize the rex alternating legs gym environment.
 
     Args:
@@ -100,7 +102,9 @@ class RexPosesEnv(rex_gym_env.RexGymEnv):
                              base_z=base_z,
                              base_roll=base_roll,
                              base_pitch=base_pitch,
-                             base_yaw=base_yaw)
+                             base_yaw=base_yaw,
+                             debug=debug,
+                             signal_type=signal_type)
 
         action_dim = 1
         action_high = np.array([0.1] * action_dim)
@@ -148,10 +152,11 @@ class RexPosesEnv(rex_gym_env.RexGymEnv):
                 self.load_ui = False
                 self.manual_control = True
         else:
-            if self._base_y != 0.0 or self._base_z != 0.0 or self._base_roll != 0.0 \
-                    or self._base_pitch != 0.0 or self._base_yaw != 0.0:
+            if self._base_y is not None or self._base_z is not None or self._base_roll is not None \
+                    or self._base_pitch is not None or self._base_yaw is not None:
                 self.fill_next_pose_and_target()
             else:
+
                 self.next_pose = self._queue.popleft()
                 # requeue element
                 self._queue.append(self.next_pose)
@@ -177,15 +182,13 @@ class RexPosesEnv(rex_gym_env.RexGymEnv):
             self.target_value = self._base_yaw
 
     @staticmethod
-    def _evaluate_stage_coefficient(t, action):
-        # sigmoid function
-        beta = p = 1.5 + action[0]
-        if p - beta <= t <= p - (beta/2):
-            return (2 / beta ** 2) * (t - p + beta) ** 2
-        elif p - (beta/2) <= t <= p:
-            return 1 - (2 / beta ** 2) * (t - p) ** 2
+    def _evaluate_stage_coefficient(current_t, action, end_t=0.0):
+        # ramp function
+        p = 0.8 + action[0]
+        if end_t <= current_t <= p + end_t:
+            return current_t
         else:
-            return 1
+            return 1.0
 
     def _signal(self, t, action):
         if not self.manual_control:

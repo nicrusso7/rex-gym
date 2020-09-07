@@ -9,6 +9,7 @@ import numpy as np
 from .. import rex_gym_env
 from ...model.gait_planner import GaitPlanner
 from ...model.kinematics import Kinematics
+from ...model.rex import Rex
 
 NUM_LEGS = 4
 NUM_MOTORS = 3 * NUM_LEGS
@@ -43,6 +44,7 @@ class RexWalkEnv(rex_gym_env.RexGymEnv):
                  env_randomizer=None,
                  log_path=None,
                  target_position=None,
+                 backwards=None,
                  signal_type="ik"):
         """Initialize the rex alternating legs gym environment.
 
@@ -91,6 +93,7 @@ class RexWalkEnv(rex_gym_env.RexGymEnv):
                              action_repeat=action_repeat,
                              target_position=target_position,
                              signal_type=signal_type,
+                             backwards=backwards,
                              debug=debug)
         # (eventually) allow different feedback ranges/action spaces for different signals
         action_max = {
@@ -115,26 +118,41 @@ class RexWalkEnv(rex_gym_env.RexGymEnv):
         self.is_terminating = False
 
     def reset(self):
-        super(RexWalkEnv, self).reset()
+        self.init_pose = Rex.INIT_POSES["stand"]
+        if self._signal_type == 'ol':
+            self.init_pose = Rex.INIT_POSES["stand_ol"]
+        super(RexWalkEnv, self).reset(initial_motor_angles=self.init_pose, reset_duration=0.5)
         self.goal_reached = False
         self.is_terminating = False
         self._stay_still = False
+        if self._backwards is None:
+            self.backwards = random.choice([True, False])
+        else:
+            self.backwards = self._backwards
+        step = 0.6
+        period = 0.65
+        base_x = self._base_x
+        if self.backwards:
+            step = -.3
+            period = .5
+            base_x = .0
         if not self._target_position or self._random_pos_target:
-            self._target_position = random.uniform(1, 3)
+            bound = -3 if self.backwards else 3
+            self._target_position = random.uniform(bound//2, bound)
             self._random_pos_target = True
         if self._is_render and self._signal_type == 'ik':
             if self.load_ui:
-                self.setup_ui()
+                self.setup_ui(base_x, step, period)
                 self.load_ui = False
         if self._is_debug:
-            print(f"Target Position x={self._target_position}, Random assignment: {self._random_pos_target}")
+            print(f"Target Position x={self._target_position}, Random assignment: {self._random_pos_target}, Backwards: {self.backwards}")
         return self._get_observation()
 
-    def setup_ui(self):
+    def setup_ui(self, base_x, step, period):
         self.base_x_ui = self._pybullet_client.addUserDebugParameter("base_x",
                                                                      self._ranges["base_x"][0],
                                                                      self._ranges["base_x"][1],
-                                                                     self._ranges["base_x"][2])
+                                                                     base_x)
         self.base_y_ui = self._pybullet_client.addUserDebugParameter("base_y",
                                                                      self._ranges["base_y"][0],
                                                                      self._ranges["base_y"][1],
@@ -155,10 +173,10 @@ class RexWalkEnv(rex_gym_env.RexGymEnv):
                                                                   self._ranges["yaw"][0],
                                                                   self._ranges["yaw"][1],
                                                                   self._ranges["yaw"][2])
-        self.step_length_ui = self._pybullet_client.addUserDebugParameter("step_length", -0.7, 0.7, 0.35)
+        self.step_length_ui = self._pybullet_client.addUserDebugParameter("step_length", -0.7, 0.7, step)
         self.step_rotation_ui = self._pybullet_client.addUserDebugParameter("step_rotation", -1.5, 1.5, 0.)
         self.step_angle_ui = self._pybullet_client.addUserDebugParameter("step_angle", -180., 180., 0.)
-        self.step_period_ui = self._pybullet_client.addUserDebugParameter("step_period", 0.2, 0.9, 0.75)
+        self.step_period_ui = self._pybullet_client.addUserDebugParameter("step_period", 0.2, 0.9, period)
 
     def _read_inputs(self, base_pos_coeff, gait_stage_coeff):
         position = np.array(
@@ -229,27 +247,34 @@ class RexWalkEnv(rex_gym_env.RexGymEnv):
     def _IK_signal(self, t, action):
         base_pos_coeff = self._evaluate_base_stage_coeff(t, width=1.5)
         gait_stage_coeff = self._evaluate_gait_stage_coeff(t, action)
+        step = 0.6
+        period = 0.65
+        base_x = self._base_x
+        if self.backwards:
+            step = -.3
+            period = .5
+            base_x = .0
         if self._is_render and self._is_debug:
             position, orientation, step_length, step_rotation, step_angle, step_period = \
                 self._read_inputs(base_pos_coeff, gait_stage_coeff)
         else:
-            position = np.array([self._base_x,
+            position = np.array([base_x,
                                  self._base_y * base_pos_coeff,
                                  self._base_z * base_pos_coeff])
             orientation = np.array([self._base_roll * base_pos_coeff,
                                     self._base_pitch * base_pos_coeff,
                                     self._base_yaw * base_pos_coeff])
-            step_length = (self.step_length if self.step_length is not None else 0.35) * gait_stage_coeff
+            step_length = (self.step_length if self.step_length is not None else step) * gait_stage_coeff
             step_rotation = (self.step_rotation if self.step_rotation is not None else 0.0)
             step_angle = self.step_angle if self.step_angle is not None else 0.0
-            step_period = (self.step_period if self.step_period is not None else 0.75)
+            step_period = (self.step_period if self.step_period is not None else period)
         if self.goal_reached:
             brakes_coeff = self._evaluate_brakes_stage_coeff(t, action, self.end_time)
             step_length *= brakes_coeff
             if brakes_coeff == 0.0:
                 self._stay_still = True
-
-        frames = self._gait_planner.loop(step_length, step_angle, step_rotation, step_period)
+        direction = -1.0 if step_length < 0 else 1.0
+        frames = self._gait_planner.loop(step_length, step_angle, step_rotation, step_period, direction)
         fr_angles, fl_angles, rr_angles, rl_angles, _ = self._kinematics.solve(orientation, position, frames)
         signal = [
             fl_angles[0], fl_angles[1], fl_angles[2],
@@ -262,9 +287,9 @@ class RexWalkEnv(rex_gym_env.RexGymEnv):
     def _open_loop_signal(self, t, action):
         period = 1.0 / 8
         l_a = 0.1
-        f_a = 0.2
+        f_a = l_a * 2
         if self.goal_reached:
-            coeff = self._evaluate_brakes_stage_coeff(t, [0.0, 0.0], end_t=self.end_time, end_value=0.0)
+            coeff = self._evaluate_brakes_stage_coeff(t, [0., 0.], end_t=self.end_time, end_value=0.0)
             l_a *= coeff
             f_a *= coeff
             if coeff is 0.0:
@@ -274,19 +299,19 @@ class RexWalkEnv(rex_gym_env.RexGymEnv):
         f_a *= start_coeff
         l_extension = l_a * math.cos(2 * math.pi / period * t)
         f_extension = f_a * math.cos(2 * math.pi / period * t)
-        initial_pose = self.rex.initial_pose
+        initial_pose = self.init_pose
         l_swing = -l_extension
         swing = -f_extension
-        pose = np.array([0.05, l_extension + action[0], f_extension + action[1],
-                         -0.05, l_swing + action[2], swing + action[3],
-                         0.05, l_swing + action[4], swing + action[5],
-                         -0.05, l_extension + action[6], f_extension + action[7]])
+        pose = np.array([0.0, l_extension + action[0], f_extension + action[1],
+                         0.0, l_swing + action[2], swing + action[3],
+                         0.0, l_swing + action[4], swing + action[5],
+                         0.0, l_extension + action[6], f_extension + action[7]])
         signal = initial_pose + pose
         return signal
 
     def _transform_action_to_motor_command(self, action):
         if self._stay_still:
-            return self.rex.initial_pose
+            return self.init_pose
         t = self.rex.GetTimeSinceReset()
         self._check_target_position(t)
         action = self._signal(t, action)

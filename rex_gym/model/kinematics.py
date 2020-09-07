@@ -3,14 +3,14 @@ import numpy as np
 
 class Kinematics:
     def __init__(self):
-        self._l = 0.14
+        self._l = 0.23
         self._w = 0.075
-        self._hip = 0.04
-        self._leg = 0.1
-        self._foot = 0.1
-        self.y_dist = 0.11
+        self._hip = 0.055
+        self._leg = 0.10652
+        self._foot = 0.145
+        self.y_dist = 0.185
         self.x_dist = self._l
-        self.height = 0.15
+        self.height = 0.2
         # frame vectors
         self._hip_front_right_v = np.array([self._l / 2, -self._w / 2, 0])
         self._hip_front_left_v = np.array([self._l / 2, self._w / 2, 0])

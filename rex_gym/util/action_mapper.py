@@ -1,11 +1,12 @@
 ENV_ID_TO_POLICY = {
     'gallop_ol': ('rex_gym/policies/gallop/ol', 'model.ckpt-4000000'),
-    'gallop_ik': ('rex_gym/policies/gallop/ik', 'model.ckpt-1500000'),
+    'gallop_ik': ('rex_gym/policies/gallop/ik', 'model.ckpt-2000000'),
     'walk_ik': ('rex_gym/policies/walk/ik', 'model.ckpt-2000000'),
     'walk_ol': ('rex_gym/policies/walk/ol', 'model.ckpt-4000000'),
     'standup_ol': ('rex_gym/policies/standup/ol', 'model.ckpt-2000000'),
     'turn_ik': ('rex_gym/policies/turn/ik', 'model.ckpt-2000000'),
-    'turn_ol': ('rex_gym/policies/turn/ol', 'model.ckpt-2000000')
+    'turn_ol': ('rex_gym/policies/turn/ol', 'model.ckpt-2000000'),
+    'poses_ik': ('rex_gym/policies/poses', 'model.ckpt-2000000')
 }
 
 ENV_ID_TO_ENV_NAMES = {
@@ -23,5 +24,5 @@ DEFAULT_SIGNAL = {
     'turn': 'ol',
     'standup': 'ol',
     'go': 'ik',
-    'poses': 'ol'
+    'poses': 'ik'
 }

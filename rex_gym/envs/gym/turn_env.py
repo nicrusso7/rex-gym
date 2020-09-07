@@ -12,6 +12,7 @@ from rex_gym.util import pybullet_data
 
 from .. import rex_gym_env
 from ...model.kinematics import Kinematics
+from ...model.rex import Rex
 
 NUM_LEGS = 4
 NUM_MOTORS = 3 * NUM_LEGS
@@ -94,8 +95,8 @@ class RexTurnEnv(rex_gym_env.RexGymEnv):
             signal_type=signal_type,
             init_orient=init_orient)
         action_max = {
-            'ik': 0.05,
-            'ol': 0.05
+            'ik': 0.01,
+            'ol': 0.01
         }
         action_dim_map = {
             'ik': 2,
@@ -104,11 +105,11 @@ class RexTurnEnv(rex_gym_env.RexGymEnv):
         action_dim = action_dim_map[self._signal_type]
         action_high = np.array([action_max[self._signal_type]] * action_dim)
         self.action_space = spaces.Box(-action_high, action_high)
-        self._cam_dist = 1.8
+        self._cam_dist = 1.1
         self._cam_yaw = 30
         self._cam_pitch = -30
         self._signal_type = signal_type
-        # we need alternate gait, so walk will works
+        # we need an alternate gait, so walk will works
         self._gait_planner = GaitPlanner("walk")
         self._kinematics = Kinematics()
         self._target_orient = target_orient
@@ -126,7 +127,10 @@ class RexTurnEnv(rex_gym_env.RexGymEnv):
         self.goal_reached = False
         self.is_terminating = False
         self._stay_still = False
-        super(RexTurnEnv, self).reset()
+        self.init_pose = Rex.INIT_POSES["stand"]
+        if self._signal_type == 'ol':
+            self.init_pose = Rex.INIT_POSES["stand_ol"]
+        super(RexTurnEnv, self).reset(initial_motor_angles=self.init_pose, reset_duration=0.5)
         if not self._target_orient or self._random_orient_target:
             self._target_orient = random.uniform(0.2, 6)
             self._random_orient_target = True
@@ -156,7 +160,7 @@ class RexTurnEnv(rex_gym_env.RexGymEnv):
         self.base_x_ui = self._pybullet_client.addUserDebugParameter("base_x",
                                                                      self._ranges["base_x"][0],
                                                                      self._ranges["base_x"][1],
-                                                                     self._ranges["base_x"][2])
+                                                                     0.009)
         self.base_y_ui = self._pybullet_client.addUserDebugParameter("base_y",
                                                                      self._ranges["base_y"][0],
                                                                      self._ranges["base_y"][1],
@@ -177,10 +181,10 @@ class RexTurnEnv(rex_gym_env.RexGymEnv):
                                                                   self._ranges["yaw"][0],
                                                                   self._ranges["yaw"][1],
                                                                   self._ranges["yaw"][2])
-        self.step_length_ui = self._pybullet_client.addUserDebugParameter("step_length", -0.7, 0.7, 0.1)
-        self.step_rotation_ui = self._pybullet_client.addUserDebugParameter("step_rotation", -1.5, 1.5, 0.2)
+        self.step_length_ui = self._pybullet_client.addUserDebugParameter("step_length", -0.7, 0.7, 0.02)
+        self.step_rotation_ui = self._pybullet_client.addUserDebugParameter("step_rotation", -1.5, 1.5, 0.5)
         self.step_angle_ui = self._pybullet_client.addUserDebugParameter("step_angle", -180., 180., 0.)
-        self.step_period_ui = self._pybullet_client.addUserDebugParameter("step_period", 0.2, 0.9, 0.4)
+        self.step_period_ui = self._pybullet_client.addUserDebugParameter("step_period", 0.2, 0.9, 0.75)
 
     def _read_inputs(self, base_pos_coeff, gait_stage_coeff):
         position = np.array(
@@ -197,7 +201,7 @@ class RexTurnEnv(rex_gym_env.RexGymEnv):
                 self._pybullet_client.readUserDebugParameter(self.yaw_ui) * base_pos_coeff
             ]
         )
-        step_length = self._pybullet_client.readUserDebugParameter(self.step_length_ui)
+        step_length = self._pybullet_client.readUserDebugParameter(self.step_length_ui) * gait_stage_coeff
         step_rotation = self._pybullet_client.readUserDebugParameter(self.step_rotation_ui) * gait_stage_coeff
         step_angle = self._pybullet_client.readUserDebugParameter(self.step_angle_ui)
         step_period = self._pybullet_client.readUserDebugParameter(self.step_period_ui)
@@ -221,9 +225,9 @@ class RexTurnEnv(rex_gym_env.RexGymEnv):
             return 1
 
     @staticmethod
-    def _evaluate_gait_stage_coeff(current_t, action, end_t=0.0):
+    def _evaluate_gait_stage_coeff(current_t, end_t=0.0):
         # ramp function
-        p = 0.8 + action[0]
+        p = .8
         if end_t <= current_t <= p + end_t:
             return current_t
         else:
@@ -231,27 +235,27 @@ class RexTurnEnv(rex_gym_env.RexGymEnv):
 
     def _IK_signal(self, t, action):
         base_pos_coeff = self._evaluate_base_stage_coeff(t, width=1.5)
-        gait_stage_coeff = self._evaluate_gait_stage_coeff(t, action)
+        gait_stage_coeff = self._evaluate_gait_stage_coeff(t)
         if self._is_render and self._is_debug:
             position, orientation, step_length, step_rotation, step_angle, step_period = \
                 self._read_inputs(base_pos_coeff, gait_stage_coeff)
         else:
-            step_dir_value = -0.2 * gait_stage_coeff
+            step_dir_value = -0.5 * gait_stage_coeff
             if self.clockwise:
                 step_dir_value *= -1
-            position = np.array([self._base_x,
+            position = np.array([0.009,
                                  self._base_y * base_pos_coeff,
                                  self._base_z * base_pos_coeff])
             orientation = np.array([self._base_roll * base_pos_coeff,
                                     self._base_pitch * base_pos_coeff,
                                     self._base_yaw * base_pos_coeff])
-            step_length = (self.step_length if self.step_length is not None else 0.1) + action[0]
-            step_rotation = (self.step_rotation if self.step_rotation is not None else step_dir_value) + action[1]
+            step_length = (self.step_length if self.step_length is not None else 0.02)
+            step_rotation = (self.step_rotation if self.step_rotation is not None else step_dir_value) + action[0]
             step_angle = self.step_angle if self.step_angle is not None else 0.0
-            step_period = (self.step_period if self.step_period is not None else 0.4)
+            step_period = (self.step_period if self.step_period is not None else 0.75) + action[1]
         if self.goal_reached:
             self._stay_still = True
-        frames = self._gait_planner.loop(step_length, step_angle, step_rotation, step_period)
+        frames = self._gait_planner.loop(step_length, step_angle, step_rotation, step_period, 1.0)
         fr_angles, fl_angles, rr_angles, rl_angles, _ = self._kinematics.solve(orientation, position, frames)
         signal = [
             fl_angles[0], fl_angles[1], fl_angles[2],
@@ -264,7 +268,7 @@ class RexTurnEnv(rex_gym_env.RexGymEnv):
     def _open_loop_signal(self, t, action):
         if self.goal_reached:
             self._stay_still = True
-        initial_pose = self.rex.INIT_POSES['stand']
+        initial_pose = self.rex.INIT_POSES['stand_ol']
         period = STEP_PERIOD
         extension = 0.1
         swing = 0.03 + action[0]
@@ -331,7 +335,7 @@ class RexTurnEnv(rex_gym_env.RexGymEnv):
     def _transform_action_to_motor_command(self, action):
         if self._stay_still:
             self._terminate_with_delay(self.rex.GetTimeSinceReset())
-            return self.rex.initial_pose
+            return self.init_pose
         t = self.rex.GetTimeSinceReset()
         self._check_target_position(t)
         action = self._signal(t, action)
