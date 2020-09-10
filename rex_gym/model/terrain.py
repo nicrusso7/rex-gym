@@ -31,7 +31,6 @@ class Terrain:
 
     def generate_terrain(self, env, height_perturbation_range=0.05):
         env.pybullet_client.setAdditionalSearchPath(pd.getDataPath())
-        # env.pybullet_client.setAdditionalSearchPath(rpd.getDataPath())
         env.pybullet_client.configureDebugVisualizer(env.pybullet_client.COV_ENABLE_RENDERING, 0)
         height_perturbation_range = height_perturbation_range
         terrain_data = [0] * self.columns * self.rows
