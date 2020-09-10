@@ -13,6 +13,7 @@ from gym import spaces
 from gym.utils import seeding
 
 from ..model import rex, motor
+from ..model.terrain import Terrain
 from ..util import bullet_client
 
 NUM_MOTORS = 12
@@ -98,7 +99,9 @@ class RexGymEnv(gym.Env):
                  step_angle=None,
                  step_period=None,
                  backwards=None,
-                 signal_type="ik"):
+                 signal_type="ik",
+                 terrain_type="plane",
+                 terrain_id=None):
         """ Initialize the rex gym environment.
 
             Args:
@@ -262,7 +265,13 @@ class RexGymEnv(gym.Env):
         }
         self.seed()
         self._backwards = backwards
+        self._terrain_type = "plane"
+        self._terrain_id = terrain_id
         self.reset()
+        self._terrain_type = terrain_type
+        self.terrain = Terrain(self._terrain_type, self._terrain_id)
+        if self._terrain_type is not "plane":
+            self.terrain.generate_terrain(self)
         observation_high = (self._get_observation_upper_bound() + OBSERVATION_EPS)
         observation_low = (self._get_observation_lower_bound() - OBSERVATION_EPS)
         action_dim = NUM_MOTORS
@@ -323,7 +332,8 @@ class RexGymEnv(gym.Env):
                     observation_noise_stdev=self._observation_noise_stdev,
                     torque_control_enabled=self._torque_control_enabled,
                     motor_overheat_protection=motor_protect,
-                    on_rack=self._on_rack))
+                    on_rack=self._on_rack,
+                    terrain_id=self._terrain_id))
         self.rex.Reset(reload_urdf=False,
                        default_motor_angles=initial_motor_angles,
                        reset_time=reset_duration)
@@ -331,7 +341,8 @@ class RexGymEnv(gym.Env):
         # Loop over all env randomizers.
         for env_randomizer in self._env_randomizers:
             env_randomizer.randomize_env(self)
-
+        if self._terrain_type is not "plane":
+            self.terrain.update_terrain()
         self._pybullet_client.setPhysicsEngineParameter(enableConeFriction=0)
         self._env_step_counter = 0
         self._last_base_position = [0, 0, 0]
@@ -522,7 +533,6 @@ class RexGymEnv(gym.Env):
         weighted_objectives = [o * w for o, w in zip(objectives, self._objective_weights)]
         reward = sum(weighted_objectives)
         self._objectives.append(objectives)
-        print(reward)
         return reward
 
     def get_objectives(self):

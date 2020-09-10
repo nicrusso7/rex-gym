@@ -11,7 +11,7 @@ from rex_gym.agents.tools import wrappers
 from rex_gym.agents.scripts import configs, utility
 from rex_gym.agents.tools.attr_dict import AttrDict
 from rex_gym.agents.tools.loop import Loop
-from rex_gym.util import action_mapper
+from rex_gym.util import flag_mapper
 
 
 class Trainer:
@@ -24,7 +24,7 @@ class Trainer:
         if self.signal_type:
             env_signal = self.signal_type
         else:
-            env_signal = action_mapper.DEFAULT_SIGNAL[env_id]
+            env_signal = flag_mapper.DEFAULT_SIGNAL[env_id]
         self.env_id = f"{env_id}_{env_signal}"
 
     def _create_environment(self, config):

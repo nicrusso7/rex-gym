@@ -50,6 +50,7 @@ class GaitPlanner:
         swing_x = 0.
         swing_y = 0.
         swing_z = 0.
+        # TODO Use all 12 points
         for i in range(10):
             swing_x = swing_x + self.bezier_curve(phi_sw, i, X[i])
             swing_y = swing_y + self.bezier_curve(phi_sw, i, Y[i])

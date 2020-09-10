@@ -40,7 +40,9 @@ class RexStandupEnv(rex_gym_env.RexGymEnv):
                  num_steps_to_log=1000,
                  env_randomizer=None,
                  log_path=None,
-                 signal_type="ol"):
+                 signal_type="ol",
+                 terrain_type="plane",
+                 terrain_id=None):
         """Initialize the rex alternating legs gym environment.
 
     Args:
@@ -87,7 +89,9 @@ class RexStandupEnv(rex_gym_env.RexGymEnv):
                              control_time_step=control_time_step,
                              action_repeat=action_repeat,
                              signal_type=signal_type,
-                             debug=debug)
+                             debug=debug,
+                             terrain_id=terrain_id,
+                             terrain_type=terrain_type)
 
         action_dim = 1
         action_high = np.array([0.1] * action_dim)

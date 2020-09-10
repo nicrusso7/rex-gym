@@ -55,7 +55,9 @@ class RexReactiveEnv(rex_gym_env.RexGymEnv):
                  env_randomizer=None,
                  log_path=None,
                  target_position=None,
-                 signal_type="ik"):
+                 signal_type="ik",
+                 terrain_type="plane",
+                 terrain_id=None):
         """Initialize Rex trotting gym environment.
 
     Args:
@@ -106,7 +108,9 @@ class RexReactiveEnv(rex_gym_env.RexGymEnv):
                              action_repeat=action_repeat,
                              target_position=target_position,
                              signal_type=signal_type,
-                             debug=debug)
+                             debug=debug,
+                             terrain_id=terrain_id,
+                             terrain_type=terrain_type)
         # (eventually) allow different feedback ranges/action spaces for different signals
         action_max = {
             'ik': 0.4,

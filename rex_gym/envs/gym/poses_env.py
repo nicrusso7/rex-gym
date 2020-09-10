@@ -52,7 +52,9 @@ class RexPosesEnv(rex_gym_env.RexGymEnv):
                  base_roll=None,
                  base_pitch=None,
                  base_yaw=None,
-                 signal_type='ik'):
+                 signal_type='ik',
+                 terrain_type="plane",
+                 terrain_id=None):
         """Initialize the rex alternating legs gym environment.
 
     Args:
@@ -104,7 +106,9 @@ class RexPosesEnv(rex_gym_env.RexGymEnv):
                              base_pitch=base_pitch,
                              base_yaw=base_yaw,
                              debug=debug,
-                             signal_type=signal_type)
+                             signal_type=signal_type,
+                             terrain_id=terrain_id,
+                             terrain_type=terrain_type)
 
         action_dim = 1
         action_high = np.array([0.1] * action_dim)

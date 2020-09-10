@@ -121,11 +121,11 @@ This is the list of tasks this experiment want to cover:
         - [ ] Inverse kinematics controller
         - [ ] Open loop signal
     3. **Walk**
-        -  forward
+        - forward
         - [x] Inverse kinematics controller
         - [x] Open loop signal
         - backward
-        - [ ] Inverse kinematics controller
+        - [x] Inverse kinematics controller
         - [ ] Open loop signal
     4. **Turn - on the spot**
      - [x] Inverse kinematics controller
@@ -133,11 +133,12 @@ This is the list of tasks this experiment want to cover:
     5. **Stand up - from the floor**
     - [ ] Inverse kinematics controller
     - [x] Open loop signal
-2. **Reach a specific point in a map**
-3. **Map an open space**
-4. **Navigate uneven terrains**
-5. **Fall recovery**
-6. **Grab an object**
+2. **Navigate uneven terrains**
+3. **Reach a specific point in a map**
+4. **Map an open space**
+5. **Stairs climbing**
+6. **Fall recovery**
+7. **Grab an object**
 
 # Environments
 

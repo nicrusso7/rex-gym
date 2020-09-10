@@ -5,10 +5,9 @@ import copy
 import math
 import re
 import numpy as np
-from . import motor
+from . import motor, terrain
 from ..util import pybullet_data
 
-INIT_POSITION = [0, 0, 0.21]
 INIT_RACK_POSITION = [0, 0, 1]
 INIT_ORIENTATION = [0, 0, 0, 1]
 OVERHEAT_SHUTDOWN_TORQUE = 2.45
@@ -105,7 +104,8 @@ class Rex(object):
                  torque_control_enabled=False,
                  motor_overheat_protection=False,
                  on_rack=False,
-                 pose_id='stand'):
+                 pose_id='stand',
+                 terrain_id='plane'):
         """Constructs a Rex and reset it to the initial states.
 
         Args:
@@ -183,12 +183,12 @@ class Rex(object):
             self._kd = 1
         self.time_step = time_step
         self._step_counter = 0
+        self.init_on_rack_position = INIT_RACK_POSITION
+        self.init_position = terrain.ROBOT_INIT_POSITION[terrain_id]
+        self.initial_pose = self.INIT_POSES[pose_id]
         # reset_time=-1.0 means skipping the reset motion.
         # See Reset for more details.
         self.Reset(reset_time=-1)
-        self.init_on_rack_position = INIT_RACK_POSITION
-        self.init_position = INIT_POSITION
-        self.initial_pose = self.INIT_POSES[pose_id]
 
     def GetTimeSinceReset(self):
         return self._step_counter * self.time_step
@@ -303,7 +303,7 @@ class Rex(object):
         if self._on_rack:
             init_position = INIT_RACK_POSITION
         else:
-            init_position = INIT_POSITION
+            init_position = self.init_position
 
         if reload_urdf:
             if self._self_collision_enabled:

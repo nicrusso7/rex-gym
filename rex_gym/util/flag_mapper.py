@@ -26,3 +26,11 @@ DEFAULT_SIGNAL = {
     'go': 'ik',
     'poses': 'ik'
 }
+
+TERRAIN_TYPE = {
+    'mounts': 'png',
+    'maze': 'png',
+    'hills': 'csv',
+    'random': 'random',
+    'plane': 'plane'
+}

@@ -45,7 +45,9 @@ class RexWalkEnv(rex_gym_env.RexGymEnv):
                  log_path=None,
                  target_position=None,
                  backwards=None,
-                 signal_type="ik"):
+                 signal_type="ik",
+                 terrain_type="plane",
+                 terrain_id=None):
         """Initialize the rex alternating legs gym environment.
 
     Args:
@@ -94,7 +96,9 @@ class RexWalkEnv(rex_gym_env.RexGymEnv):
                              target_position=target_position,
                              signal_type=signal_type,
                              backwards=backwards,
-                             debug=debug)
+                             debug=debug,
+                             terrain_id=terrain_id,
+                             terrain_type=terrain_type)
         # (eventually) allow different feedback ranges/action spaces for different signals
         action_max = {
             'ik': 0.4,
