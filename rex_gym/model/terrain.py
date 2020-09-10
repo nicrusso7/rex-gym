@@ -1,5 +1,6 @@
 # Original script: https://github.com/bulletphysics/bullet3/blob/master/examples/pybullet/examples/heightfield.py
 import pybullet_data as pd
+import rex_gym.util.pybullet_data as rpd
 import pybullet as p
 import random
 
@@ -30,6 +31,7 @@ class Terrain:
 
     def generate_terrain(self, env, height_perturbation_range=0.05):
         env.pybullet_client.setAdditionalSearchPath(pd.getDataPath())
+        # env.pybullet_client.setAdditionalSearchPath(rpd.getDataPath())
         env.pybullet_client.configureDebugVisualizer(env.pybullet_client.COV_ENABLE_RENDERING, 0)
         height_perturbation_range = height_perturbation_range
         terrain_data = [0] * self.columns * self.rows
@@ -58,6 +60,8 @@ class Terrain:
                 fileName="heightmaps/ground0.txt",
                 heightfieldTextureScaling=128)
             terrain = env.pybullet_client.createMultiBody(0, terrain_shape)
+            textureId = env.pybullet_client.loadTexture(f"{rpd.getDataPath()}/grass.png")
+            env.pybullet_client.changeVisualShape(terrain, -1, textureUniqueId=textureId)
             env.pybullet_client.resetBasePositionAndOrientation(terrain, [1, 0, 2], [0, 0, 0, 1])
 
         # TODO do this better..
