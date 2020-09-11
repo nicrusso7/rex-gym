@@ -229,7 +229,7 @@ class RexReactiveEnv(rex_gym_env.RexGymEnv):
     @staticmethod
     def _evaluate_brakes_stage_coeff(current_t, action, end_t=0.0, end_value=0.0):
         # ramp function
-        p = .9 + action[0]
+        p = 1. + action[0]
         if end_t <= current_t <= p + end_t:
             return 1 - (current_t - end_t)
         else:
@@ -270,8 +270,6 @@ class RexReactiveEnv(rex_gym_env.RexGymEnv):
         if self.goal_reached:
             brakes_coeff = self._evaluate_brakes_stage_coeff(t, action, self.end_time)
             step_length *= brakes_coeff
-            if brakes_coeff == 0.0:
-                self._stay_still = True
         frames = self._gait_planner.loop(step_length, step_angle, step_rotation, step_period, 1.0)
         fr_angles, fl_angles, rr_angles, rl_angles, _ = self._kinematics.solve(orientation, position, frames)
         signal = [
