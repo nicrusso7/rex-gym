@@ -11,10 +11,9 @@ MOTOR_RESISTANCE = 0.186
 MOTOR_TORQUE_CONSTANT = 0.0954
 MOTOR_VISCOUS_DAMPING = 0
 MOTOR_SPEED_LIMIT = MOTOR_VOLTAGE / (MOTOR_VISCOUS_DAMPING + MOTOR_TORQUE_CONSTANT)
-NUM_MOTORS = 12
 
 
-class MotorModel(object):
+class MotorModel:
     """The accurate motor model, which is based on the physics of DC motors.
 
         The motor model support two types of control: position control and torque
@@ -27,7 +26,8 @@ class MotorModel(object):
         pd gains, viscous friction, back-EMF voltage and current-torque profile.
     """
 
-    def __init__(self, torque_control_enabled=False, kp=1.2, kd=0):
+    def __init__(self, motors_num, torque_control_enabled=False, kp=1.2, kd=0):
+        self._motors_num = motors_num
         self._torque_control_enabled = torque_control_enabled
         self._kp = kp
         self._kd = kd
@@ -37,7 +37,7 @@ class MotorModel(object):
         self._viscous_damping = MOTOR_VISCOUS_DAMPING
         self._current_table = [0, 10, 20, 30, 40, 50, 60]
         self._torque_table = [0, 1, 1.9, 2.45, 3.0, 3.25, 3.5]
-        self._strength_ratios = [1.0] * NUM_MOTORS
+        self._strength_ratios = [1.0] * self._motors_num
 
     def set_strength_ratios(self, ratios):
         """Set the strength of each motors relative to the default value.
@@ -105,9 +105,9 @@ class MotorModel(object):
             pwm = motor_commands
         else:
             if kp is None:
-                kp = np.full(NUM_MOTORS, self._kp)
+                kp = np.full(self._motors_num, self._kp)
             if kd is None:
-                kd = np.full(NUM_MOTORS, self._kd)
+                kd = np.full(self._motors_num, self._kd)
             pwm = -1 * kp * (motor_angle - motor_commands) - kd * motor_velocity
 
         pwm = np.clip(pwm, -1.0, 1.0)

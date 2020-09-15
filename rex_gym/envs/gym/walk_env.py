@@ -7,12 +7,11 @@ import random
 from gym import spaces
 import numpy as np
 from .. import rex_gym_env
+from ...model import rex_constants
 from ...model.gait_planner import GaitPlanner
 from ...model.kinematics import Kinematics
-from ...model.rex import Rex
 
 NUM_LEGS = 4
-NUM_MOTORS = 3 * NUM_LEGS
 
 
 class RexWalkEnv(rex_gym_env.RexGymEnv):
@@ -47,7 +46,8 @@ class RexWalkEnv(rex_gym_env.RexGymEnv):
                  backwards=None,
                  signal_type="ik",
                  terrain_type="plane",
-                 terrain_id=None):
+                 terrain_id=None,
+                 mark='base'):
         """Initialize the rex alternating legs gym environment.
 
     Args:
@@ -98,7 +98,8 @@ class RexWalkEnv(rex_gym_env.RexGymEnv):
                              backwards=backwards,
                              debug=debug,
                              terrain_id=terrain_id,
-                             terrain_type=terrain_type)
+                             terrain_type=terrain_type,
+                             mark=mark)
         # (eventually) allow different feedback ranges/action spaces for different signals
         action_max = {
             'ik': 0.4,
@@ -122,9 +123,9 @@ class RexWalkEnv(rex_gym_env.RexGymEnv):
         self.is_terminating = False
 
     def reset(self):
-        self.init_pose = Rex.INIT_POSES["stand"]
+        self.init_pose = rex_constants.INIT_POSES["stand"]
         if self._signal_type == 'ol':
-            self.init_pose = Rex.INIT_POSES["stand_ol"]
+            self.init_pose = rex_constants.INIT_POSES["stand_ol"]
         super(RexWalkEnv, self).reset(initial_motor_angles=self.init_pose, reset_duration=0.5)
         self.goal_reached = False
         self.is_terminating = False
@@ -319,6 +320,7 @@ class RexWalkEnv(rex_gym_env.RexGymEnv):
         t = self.rex.GetTimeSinceReset()
         self._check_target_position(t)
         action = self._signal(t, action)
+        action = super(RexWalkEnv, self)._transform_action_to_motor_command(action)
         return action
 
     def is_fallen(self):

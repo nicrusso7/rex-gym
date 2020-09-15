@@ -1,5 +1,6 @@
 import click
 
+from rex_gym.model import mark_constants
 from rex_gym.util import flag_mapper
 
 
@@ -17,12 +18,16 @@ def cli():
 @click.option('--inverse-kinematics', '-ik', is_flag=True, help="Use the inverse kinematics controller")
 @click.option('--terrain', '-t', default="plane", help="Set the simulation terrain.",
               type=click.Choice([t for t in flag_mapper.TERRAIN_TYPE.keys()]))
-def policy(env, arg, flag, open_loop, inverse_kinematics, terrain):
+@click.option('--mark', '-m', default="base", help="Set the Rex robot version.",
+              type=click.Choice(mark_constants.MARK_LIST))
+@click.option('--mark', '-m', default="base", help="Set the Rex robot version.",
+              type=click.Choice(mark_constants.MARK_LIST))
+def policy(env, arg, flag, open_loop, inverse_kinematics, terrain, mark):
+    # import locally the PolicyPlayer to avoid the pyBullet loading at every cli command
     from rex_gym.playground.policy_player import PolicyPlayer
-    terrain_args = _parse_terrain(terrain)
-    args = _parse_args(arg + flag)
-    args.update(terrain_args)
-    signal_type = _parse_signal_type(open_loop, inverse_kinematics)
+    # parse input args
+    args, signal_type = _parse_input(arg, flag, terrain, mark, open_loop, inverse_kinematics)
+    # run the Policy Player
     PolicyPlayer(env, args, signal_type).play()
 
 
@@ -38,13 +43,28 @@ def policy(env, arg, flag, open_loop, inverse_kinematics, terrain):
 @click.option('--inverse-kinematics', '-ik', is_flag=True, help="Use the inverse kinematics controller")
 @click.option('--terrain', '-t', default="plane", help="Set the simulation terrain.",
               type=click.Choice([t for t in flag_mapper.TERRAIN_TYPE.keys()]))
-def train(env, arg, flag, log_dir, playground, agents_number, open_loop, inverse_kinematics, terrain):
+@click.option('--mark', '-m', default="base", help="Set the Rex robot version.",
+              type=click.Choice(mark_constants.MARK_LIST))
+def train(env, arg, flag, log_dir, playground, agents_number, open_loop, inverse_kinematics, terrain, mark):
+    # import locally the Trainer to avoid the pyBullet loading at every cli command
     from rex_gym.playground.trainer import Trainer
+    # parse input args
+    args, signal_type = _parse_input(arg, flag, terrain, mark, open_loop, inverse_kinematics)
+    # run the Trainer
+    Trainer(env, args, playground, log_dir, agents_number, signal_type).start_training()
+
+
+def _parse_input(arg, flag, terrain, mark, open_loop, inverse_kinematics):
     terrain_args = _parse_terrain(terrain)
     args = _parse_args(arg + flag)
     args.update(terrain_args)
+    args.update(_parse_mark(mark))
     signal_type = _parse_signal_type(open_loop, inverse_kinematics)
-    Trainer(env, args, playground, log_dir, agents_number, signal_type).start_training()
+    return args, signal_type
+
+
+def _parse_mark(mark_id):
+    return {'mark': mark_id}
 
 
 def _parse_terrain(terrain_id):

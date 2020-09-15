@@ -47,7 +47,8 @@ class RexTurnEnv(rex_gym_env.RexGymEnv):
                  init_orient=None,
                  signal_type="ik",
                  terrain_type="plane",
-                 terrain_id=None):
+                 terrain_id=None,
+                 mark='base'):
         """Initialize the rex alternating legs gym environment.
 
         Args:
@@ -97,7 +98,8 @@ class RexTurnEnv(rex_gym_env.RexGymEnv):
             signal_type=signal_type,
             init_orient=init_orient,
             terrain_id=terrain_id,
-            terrain_type=terrain_type)
+            terrain_type=terrain_type,
+            mark=mark)
         action_max = {
             'ik': 0.01,
             'ol': 0.01

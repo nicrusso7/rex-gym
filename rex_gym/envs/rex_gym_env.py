@@ -12,15 +12,11 @@ import pybullet_data
 from gym import spaces
 from gym.utils import seeding
 
-from ..model import rex, motor
+from ..model import rex, motor, mark_constants, rex_constants
 from ..model.terrain import Terrain
 from ..util import bullet_client
 
-NUM_MOTORS = 12
 MOTOR_ANGLE_OBSERVATION_INDEX = 0
-MOTOR_VELOCITY_OBSERVATION_INDEX = MOTOR_ANGLE_OBSERVATION_INDEX + NUM_MOTORS
-MOTOR_TORQUE_OBSERVATION_INDEX = MOTOR_VELOCITY_OBSERVATION_INDEX + NUM_MOTORS
-BASE_ORIENTATION_OBSERVATION_INDEX = MOTOR_TORQUE_OBSERVATION_INDEX + NUM_MOTORS
 OBSERVATION_EPS = 0.01
 RENDER_HEIGHT = 360
 RENDER_WIDTH = 480
@@ -101,7 +97,8 @@ class RexGymEnv(gym.Env):
                  backwards=None,
                  signal_type="ik",
                  terrain_type="plane",
-                 terrain_id=None):
+                 terrain_id=None,
+                 mark='base'):
         """ Initialize the rex gym environment.
 
             Args:
@@ -160,6 +157,11 @@ class RexGymEnv(gym.Env):
             Raises:
               ValueError: If the urdf_version is not supported.
         """
+        self.mark = mark
+        self.num_motors = mark_constants.MARK_DETAILS['motors_num'][self.mark]
+        self.motor_velocity_obs_index = MOTOR_ANGLE_OBSERVATION_INDEX + self.num_motors
+        self.motor_torque_obs_index = self.motor_velocity_obs_index + self.num_motors
+        self.base_orientation_obs_index = self.motor_torque_obs_index + self.num_motors
         # Set up logging.
         self._log_path = log_path
         # @TODO fix logging
@@ -274,7 +276,7 @@ class RexGymEnv(gym.Env):
             self.terrain.generate_terrain(self)
         observation_high = (self._get_observation_upper_bound() + OBSERVATION_EPS)
         observation_low = (self._get_observation_lower_bound() - OBSERVATION_EPS)
-        action_dim = NUM_MOTORS
+        action_dim = self.num_motors
         action_high = np.array([self._action_bound] * action_dim)
         self.action_space = spaces.Box(-action_high, action_high)
         self.observation_space = spaces.Box(observation_low, observation_high)
@@ -333,7 +335,8 @@ class RexGymEnv(gym.Env):
                     torque_control_enabled=self._torque_control_enabled,
                     motor_overheat_protection=motor_protect,
                     on_rack=self._on_rack,
-                    terrain_id=self._terrain_id))
+                    terrain_id=self._terrain_id,
+                    mark=self.mark))
         self.rex.Reset(reload_urdf=False,
                        default_motor_angles=initial_motor_angles,
                        reset_time=reset_duration)
@@ -358,7 +361,10 @@ class RexGymEnv(gym.Env):
         return [seed]
 
     def _transform_action_to_motor_command(self, action):
-        pass
+        if len(action) != mark_constants.MARK_DETAILS['motors_num'][self.mark]:
+            # extend with arm rest pose
+            action = np.concatenate((action, rex_constants.ARM_POSES["rest"]))
+        return action
 
     def step(self, action):
         """Step forward the simulation, given the action.
@@ -438,7 +444,7 @@ class RexGymEnv(gym.Env):
         Returns:
           A numpy array of motor angles.
         """
-        return np.array(self._observation[MOTOR_ANGLE_OBSERVATION_INDEX:MOTOR_ANGLE_OBSERVATION_INDEX + NUM_MOTORS])
+        return np.array(self._observation[MOTOR_ANGLE_OBSERVATION_INDEX:MOTOR_ANGLE_OBSERVATION_INDEX + self.num_motors])
 
     def get_rex_motor_velocities(self):
         """Get the rex's motor velocities.
@@ -447,7 +453,7 @@ class RexGymEnv(gym.Env):
           A numpy array of motor velocities.
         """
         return np.array(
-            self._observation[MOTOR_VELOCITY_OBSERVATION_INDEX:MOTOR_VELOCITY_OBSERVATION_INDEX + NUM_MOTORS])
+            self._observation[self.motor_velocity_obs_index:self.motor_velocity_obs_index + self.num_motors])
 
     def get_rex_motor_torques(self):
         """Get the rex's motor torques.
@@ -456,7 +462,7 @@ class RexGymEnv(gym.Env):
           A numpy array of motor torques.
         """
         return np.array(
-            self._observation[MOTOR_TORQUE_OBSERVATION_INDEX:MOTOR_TORQUE_OBSERVATION_INDEX + NUM_MOTORS])
+            self._observation[self.motor_torque_obs_index:self.motor_torque_obs_index + self.num_motors])
 
     def get_rex_base_orientation(self):
         """Get the rex's base orientation, represented by a quaternion.
@@ -464,7 +470,7 @@ class RexGymEnv(gym.Env):
         Returns:
           A numpy array of rex's orientation.
         """
-        return np.array(self._observation[BASE_ORIENTATION_OBSERVATION_INDEX:])
+        return np.array(self._observation[self.base_orientation_obs_index:])
 
     def is_fallen(self):
         """Decide whether Rex has fallen.
@@ -597,8 +603,8 @@ class RexGymEnv(gym.Env):
         upper_bound = np.zeros(self._get_observation_dimension())
         num_motors = self.rex.num_motors
         upper_bound[0:num_motors] = math.pi  # Joint angle.
-        upper_bound[num_motors:2 * num_motors] = (motor.MOTOR_SPEED_LIMIT)  # Joint velocity.
-        upper_bound[2 * num_motors:3 * num_motors] = (motor.OBSERVED_TORQUE_LIMIT)  # Joint torque.
+        upper_bound[num_motors:2 * num_motors] = motor.MOTOR_SPEED_LIMIT  # Joint velocity.
+        upper_bound[2 * num_motors:3 * num_motors] = motor.OBSERVED_TORQUE_LIMIT  # Joint torque.
         upper_bound[3 * num_motors:] = 1.0  # Quaternion of base orientation.
         return upper_bound
 

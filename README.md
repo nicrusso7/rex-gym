@@ -7,6 +7,7 @@ The goal of this project is to train an open-source 3D printed quadruped robot e
 successfully transfer the knowledge (`Control Policies`) on the real robot without any other manual tuning.
 
 This project is mostly inspired by the incredible works done by Boston Dynamics.
+
 ## Related repositories
 [rexctl](https://github.com/nicrusso7/rexctl) - A CLI application to bootstrap and control Rex running the trained `Control Policies`.
 
@@ -73,7 +74,7 @@ The robot used for this first version is the [Spotmicro](https://www.thingiverse
 
 I've printed the components using a Creality Ender3 3D printer, with PLA and TPU+.
 
-<img src="https://camo.githubusercontent.com/cf4858999d5f9ffd1b4e9dfcf0cb43cc6505c890/68747470733a2f2f692e696d6775722e636f6d2f446e43303548572e6a7067" width="700" height="850">
+![](https://camo.githubusercontent.com/cf4858999d5f9ffd1b4e9dfcf0cb43cc6505c890/68747470733a2f2f692e696d6775722e636f6d2f446e43303548572e6a7067)
 
 The hardware used is listed in this [wiki](https://github.com/nicrusso7/rexctl/wiki/Mark-I).
 
@@ -83,11 +84,18 @@ fixing some design issue to support a better (and easier) calibration and more r
 # Simulation model
 Rex is a 12 joints robot with 3 motors (`Shoulder`, `Leg` and `Foot`) for each leg. 
 
-The robot model is imported in `pyBullet` using an [URDF file](rex_gym/util/pybullet_data/assets/urdf/rex.urdf). 
+The robot `base` model is imported in `pyBullet` using an [URDF file](rex_gym/util/pybullet_data/assets/urdf/rex.urdf). 
 
 The servo motors are modelled in the `model/motor.py` class.
 
 ![rex bullet](images/rex.png)
+
+The `arm` model has the open source 6DOF robotic arm [Poppy Ergo Jr](https://github.com/poppy-project/poppy-ergo-jr) equipped on the top of the
+rack.
+
+![rex arm](images/rex_arm.png)
+
+To switch between `base` and `arm` models use the `--mark` flag.
 
 # Learning approach
 This library uses the `Proximal Policy Optimization (PPO)` algorithm with a hybrid policy defined as: 
@@ -141,10 +149,11 @@ This is the list of tasks this experiment want to cover:
     - [x] Random heightfield, hill, mount
     - [ ] Maze
     - [ ] Stairs
-3. **Reach a specific point in a map**
-4. **Map an open space**
+3. **Open a door**
+4. **Grab an object**
 5. **Fall recovery**
-6. **Grab an object**
+6. **Reach a specific point in a map**
+7. **Map an open space**
 
 # Terrains
 To set a specific terrain, use the `--terrain` flag. The default terrain is the standard `plane`. This feature is quite useful to 
@@ -302,10 +311,13 @@ def default():
 
 [Leg Trajectory Planning for Quadruped Robots with High-Speed Trot Gait](https://www.researchgate.net/publication/332374021_Leg_Trajectory_Planning_for_Quadruped_Robots_with_High-Speed_Trot_Gait)
 
-## Inspiring projects
-The kinematics model was inspired by the great work done by [Miguel Ayuso](https://hackaday.io/project/171456-diy-hobby-servos-quadruped-robot).
-
 ## Robot platform v1
 [Deok-yeon Kim](https://www.thingiverse.com/KDY0523/about) creator of SpotMini.
 
+The awesome [Poppy Project](https://github.com/poppy-project).
+
 SpotMicro CAD files: [SpotMicroAI](https://github.com/FlorianWilk/SpotMicroAI) community.
+
+## Inspiring projects
+The kinematics model was inspired by the great work done by [Miguel Ayuso](https://hackaday.io/project/171456-diy-hobby-servos-quadruped-robot).
+

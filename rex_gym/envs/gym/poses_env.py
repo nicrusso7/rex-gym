@@ -54,7 +54,8 @@ class RexPosesEnv(rex_gym_env.RexGymEnv):
                  base_yaw=None,
                  signal_type='ik',
                  terrain_type="plane",
-                 terrain_id=None):
+                 terrain_id=None,
+                 mark='base'):
         """Initialize the rex alternating legs gym environment.
 
     Args:
@@ -108,8 +109,9 @@ class RexPosesEnv(rex_gym_env.RexGymEnv):
                              debug=debug,
                              signal_type=signal_type,
                              terrain_id=terrain_id,
-                             terrain_type=terrain_type)
-
+                             terrain_type=terrain_type,
+                             mark=mark)
+        self.mark = mark
         action_dim = 1
         action_high = np.array([0.1] * action_dim)
         self.action_space = spaces.Box(-action_high, action_high)
@@ -119,8 +121,7 @@ class RexPosesEnv(rex_gym_env.RexGymEnv):
         self.stand = False
         if self._on_rack:
             self._cam_pitch = 0
-        self._init_base_x = 0.012
-
+        self._init_base_x = self._ranges["base_x"][2]
 
     def setup_ui_params(self):
         self.base_x = self._pybullet_client.addUserDebugParameter("base_x",
@@ -252,6 +253,7 @@ class RexPosesEnv(rex_gym_env.RexGymEnv):
     def _transform_action_to_motor_command(self, action):
         action = self._signal(self.rex.GetTimeSinceReset(), action)
         action = self._convert_from_leg_model(action)
+        action = super(RexPosesEnv, self)._transform_action_to_motor_command(action)
         return action
 
     def is_fallen(self):
@@ -260,7 +262,7 @@ class RexPosesEnv(rex_gym_env.RexGymEnv):
       Boolean value that indicates whether the rex has fallen.
     """
         roll, _, _ = self.rex.GetTrueBaseRollPitchYaw()
-        return math.fabs(roll) > 0.8
+        return False
 
     def _reward(self):
         # positive reward as long as rex stands
