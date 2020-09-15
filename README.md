@@ -82,6 +82,8 @@ The idea is to extend the robot adding components like a robotic arm on the top 
 fixing some design issue to support a better (and easier) calibration and more reliable servo motors.
 
 # Simulation model
+
+## Base model
 Rex is a 12 joints robot with 3 motors (`Shoulder`, `Leg` and `Foot`) for each leg. 
 
 The robot `base` model is imported in `pyBullet` using an [URDF file](rex_gym/util/pybullet_data/assets/urdf/rex.urdf). 
@@ -90,6 +92,7 @@ The servo motors are modelled in the `model/motor.py` class.
 
 ![rex bullet](images/rex.png)
 
+## Robotic arm
 The `arm` model has the open source 6DOF robotic arm [Poppy Ergo Jr](https://github.com/poppy-project/poppy-ergo-jr) equipped on the top of the
 rack.
 
