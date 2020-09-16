@@ -1,6 +1,4 @@
-"""This file implements the gym environment of rex alternating legs.
-
-"""
+"""This file implements the gym environment of rex turning on the spot."""
 import math
 import random
 
@@ -11,11 +9,11 @@ from rex_gym.model.gait_planner import GaitPlanner
 from rex_gym.util import pybullet_data
 
 from .. import rex_gym_env
+from ...model import rex_constants
 from ...model.kinematics import Kinematics
 from ...model.rex import Rex
 
 NUM_LEGS = 4
-NUM_MOTORS = 3 * NUM_LEGS
 STEP_PERIOD = 1.0 / 10.0  # 10 steps per second.
 
 
@@ -58,7 +56,7 @@ class RexTurnEnv(rex_gym_env.RexGymEnv):
           control_time_step: The time step between two successive control signals.
           action_repeat: The number of simulation steps that an action is repeated.
           control_latency: The latency between get_observation() and the actual
-            observation. See minituar.py for more details.
+            observation. See rex.py for more details.
           pd_latency: The latency used to get motor angles/velocities used to
             compute PD controllers. See rex.py for more details.
           on_rack: Whether to place the rex on rack. This is only used to debug
@@ -66,7 +64,6 @@ class RexTurnEnv(rex_gym_env.RexGymEnv):
             that its walk gait is clearer to visualize.
           motor_kp: The P gain of the motor.
           motor_kd: The D gain of the motor.
-          remove_default_joint_damping: Whether to remove the default joint damping.
           render: Whether to render the simulation.
           num_steps_to_log: The max number of control steps in one episode. If the
             number of steps is over num_steps_to_log, the environment will still
@@ -133,9 +130,9 @@ class RexTurnEnv(rex_gym_env.RexGymEnv):
         self.goal_reached = False
         self.is_terminating = False
         self._stay_still = False
-        self.init_pose = Rex.INIT_POSES["stand"]
+        self.init_pose = rex_constants.INIT_POSES["stand"]
         if self._signal_type == 'ol':
-            self.init_pose = Rex.INIT_POSES["stand_ol"]
+            self.init_pose = rex_constants.INIT_POSES["stand_ol"]
         super(RexTurnEnv, self).reset(initial_motor_angles=self.init_pose, reset_duration=0.5)
         if not self._target_orient or self._random_orient_target:
             self._target_orient = random.uniform(0.2, 6)
@@ -274,7 +271,7 @@ class RexTurnEnv(rex_gym_env.RexGymEnv):
     def _open_loop_signal(self, t, action):
         if self.goal_reached:
             self._stay_still = True
-        initial_pose = self.rex.INIT_POSES['stand_ol']
+        initial_pose = rex_constants.INIT_POSES['stand_ol']
         period = STEP_PERIOD
         extension = 0.1
         swing = 0.03 + action[0]
@@ -345,6 +342,7 @@ class RexTurnEnv(rex_gym_env.RexGymEnv):
         t = self.rex.GetTimeSinceReset()
         self._check_target_position(t)
         action = self._signal(t, action)
+        action = super(RexTurnEnv, self)._transform_action_to_motor_command(action)
         return action
 
     def is_fallen(self):

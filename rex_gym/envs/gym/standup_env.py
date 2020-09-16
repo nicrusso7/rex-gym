@@ -7,6 +7,7 @@ import random
 from gym import spaces
 import numpy as np
 from .. import rex_gym_env
+from ...model import rex_constants
 from ...model.rex import Rex
 
 NUM_LEGS = 4
@@ -105,16 +106,16 @@ class RexStandupEnv(rex_gym_env.RexGymEnv):
             self._cam_pitch = 0
 
     def reset(self):
-        super(RexStandupEnv, self).reset(initial_motor_angles=Rex.INIT_POSES['rest_position'],
+        super(RexStandupEnv, self).reset(initial_motor_angles=rex_constants.INIT_POSES['rest_position'],
                                          reset_duration=0.5)
         return self._get_observation()
 
     def _signal(self, t, action):
         if t > 0.1:
-            return self.rex.INIT_POSES['stand']
+            return rex_constants.INIT_POSES['stand']
         t += 1
         # apply a 'brake' function
-        signal = self.rex.INIT_POSES['stand'] * ((.1 + action[0]) / t + 1.5)
+        signal = rex_constants.INIT_POSES['stand'] * ((.1 + action[0]) / t + 1.5)
         return signal
 
     @staticmethod
@@ -129,11 +130,10 @@ class RexStandupEnv(rex_gym_env.RexGymEnv):
     def _transform_action_to_motor_command(self, action):
         action = self._signal(self.rex.GetTimeSinceReset(), action)
         action = self._convert_from_leg_model(action)
+        action = super(RexStandupEnv, self)._transform_action_to_motor_command(action)
         return action
 
     def _termination(self):
-        if self.is_fallen():
-            print("IS FALLEN!")
         return self.is_fallen()
 
     def is_fallen(self):

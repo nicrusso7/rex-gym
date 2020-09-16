@@ -12,6 +12,7 @@ from rex_gym.model.gait_planner import GaitPlanner
 from .. import rex_gym_env
 
 # Radiant
+from ...model import rex_constants
 from ...model.kinematics import Kinematics
 from ...model.rex import Rex
 
@@ -138,9 +139,9 @@ class RexReactiveEnv(rex_gym_env.RexGymEnv):
         self.is_terminating = False
 
     def reset(self):
-        self.init_pose = Rex.INIT_POSES["stand"]
+        self.init_pose = rex_constants.INIT_POSES["stand"]
         if self._signal_type == 'ol':
-            self.init_pose = Rex.INIT_POSES["stand_ol"]
+            self.init_pose = rex_constants.INIT_POSES["stand_ol"]
         super(RexReactiveEnv, self).reset(initial_motor_angles=self.init_pose, reset_duration=0.5)
         self.goal_reached = False
         self._stay_still = False
@@ -307,6 +308,7 @@ class RexReactiveEnv(rex_gym_env.RexGymEnv):
         t = self.rex.GetTimeSinceReset()
         self._check_target_position(t)
         action = self._signal(t, action)
+        action = super(RexReactiveEnv, self)._transform_action_to_motor_command(action)
         return action
 
     def _out_of_trajectory(self):

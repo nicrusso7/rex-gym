@@ -41,7 +41,7 @@ def MapToMinusPiToPi(angles):
     return mapped_angles
 
 
-class Rex(object):
+class Rex:
     """The Rex class that simulates a quadruped robot."""
 
     def __init__(self,
