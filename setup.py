@@ -27,7 +27,7 @@ def copy_assets(dir_path):
 
 setup(
     name='rex_gym',
-    version='0.2.2',
+    version='0.2.3',
     license='Apache 2.0',
     packages=find_packages(),
     author='Nicola Russo',

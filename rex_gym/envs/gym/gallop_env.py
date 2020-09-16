@@ -7,6 +7,8 @@ import random
 
 from gym import spaces
 import numpy as np
+from rex_gym.model import mark_constants
+
 from rex_gym.model.gait_planner import GaitPlanner
 
 from .. import rex_gym_env
@@ -14,7 +16,6 @@ from .. import rex_gym_env
 # Radiant
 from ...model import rex_constants
 from ...model.kinematics import Kinematics
-from ...model.rex import Rex
 
 NUM_LEGS = 4
 NUM_MOTORS = 3 * NUM_LEGS
@@ -308,6 +309,7 @@ class RexReactiveEnv(rex_gym_env.RexGymEnv):
         t = self.rex.GetTimeSinceReset()
         self._check_target_position(t)
         action = self._signal(t, action)
+        print(action)
         action = super(RexReactiveEnv, self)._transform_action_to_motor_command(action)
         return action
 
@@ -371,7 +373,7 @@ class RexReactiveEnv(rex_gym_env.RexGymEnv):
         ]
 
         if self._use_angle_in_observation:
-            upper_bound.extend([upper_bound_motor_angle] * NUM_MOTORS)
+            upper_bound.extend([upper_bound_motor_angle] * mark_constants.MARK_DETAILS['motors_num'][self.mark])
         return np.array(upper_bound)
 
     def _get_observation_lower_bound(self):
