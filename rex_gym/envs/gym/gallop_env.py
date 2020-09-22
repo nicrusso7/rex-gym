@@ -309,7 +309,6 @@ class RexReactiveEnv(rex_gym_env.RexGymEnv):
         t = self.rex.GetTimeSinceReset()
         self._check_target_position(t)
         action = self._signal(t, action)
-        print(action)
         action = super(RexReactiveEnv, self)._transform_action_to_motor_command(action)
         return action
 

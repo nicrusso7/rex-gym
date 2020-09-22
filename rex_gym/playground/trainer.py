@@ -3,6 +3,7 @@ import datetime
 import functools
 import logging
 import os
+import platform
 
 import gym
 import tensorflow.compat.v1 as tf
@@ -131,5 +132,7 @@ class Trainer:
         full_logdir = os.path.expanduser(os.path.join(self.log_dir, '{}-{}'.format(timestamp, self.env_id)))
         config = AttrDict(getattr(configs, self.env_id)())
         config = utility.save_config(config, full_logdir)
-        for score in self._train(config, True):
+        os_name = platform.system()
+        enable_processes = False if os_name == 'Windows' else False
+        for score in self._train(config, enable_processes):
             tf.logging.info('Score {}.'.format(score))
