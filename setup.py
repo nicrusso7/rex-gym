@@ -17,7 +17,7 @@ with open(os.path.join(this_directory, 'requirements.txt'), encoding='utf-8') as
 
 setup(
     name='rex_gym',
-    version='0.2.6',
+    version='0.2.7',
     license='Apache 2.0',
     packages=find_packages(),
     author='Nicola Russo',
