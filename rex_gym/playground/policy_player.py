@@ -12,7 +12,7 @@ from rex_gym.util import flag_mapper
 
 class PolicyPlayer:
     def __init__(self, env_id: str, args: dict, signal_type: str):
-        self.gym_dir_path = str(site.getsitepackages()[0])
+        self.gym_dir_path = str(site.getsitepackages()[-1])
         self.env_id = env_id
         self.args = args
         self.signal_type = signal_type
