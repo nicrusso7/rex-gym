@@ -2,9 +2,14 @@ import numpy as np
 
 ARM_POSES = {
     'rest': np.array([
-        -1.6, -1.6, 0.,
-        0., 1.6, 0.
+        -1.57, -1.57, 0.,
+        0., 1.57, -1.57,
+        # 0.
     ])
+    # 'rest': np.array([
+    #     0, 0, 0.,
+    #     0., 0, 0, 0.
+    # ])
 }
 
 INIT_POSES = {

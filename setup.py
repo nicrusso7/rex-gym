@@ -1,10 +1,11 @@
 import os
+import pathlib
 import platform
 from distutils.core import setup
 
 from setuptools import find_packages
 
-this_directory = os.path.abspath(os.path.dirname(__file__))
+this_directory = pathlib.Path(__file__).parent
 os_name = platform.system()
 
 with open(os.path.join(this_directory, 'README.md'), encoding='utf-8') as f:
@@ -27,7 +28,7 @@ def copy_assets(dir_path):
 
 setup(
     name='rex_gym',
-    version='0.2.3',
+    version='0.2.4',
     license='Apache 2.0',
     packages=find_packages(),
     author='Nicola Russo',
