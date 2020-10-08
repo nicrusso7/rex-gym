@@ -133,6 +133,6 @@ class Trainer:
         config = AttrDict(getattr(configs, self.env_id)())
         config = utility.save_config(config, full_logdir)
         os_name = platform.system()
-        enable_processes = False if os_name == 'Windows' else False
+        enable_processes = False if os_name == 'Windows' else True
         for score in self._train(config, enable_processes):
             tf.logging.info('Score {}.'.format(score))
