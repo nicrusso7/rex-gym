@@ -9,13 +9,13 @@ BASE_MOTOR_NAMES = [
 ARM_MOTOR_NAMES = [
     "motor_arm_m1", "motor_arm_m2", "motor_arm_m3",
     "motor_arm_m4", "motor_arm_m5", "motor_arm_m6",
-    # "motor_arm_m7"
+    "motor_arm_m7"
 ]
 
 MARK_DETAILS = {
     'motors_num': {
         'base': 12,
-        'arm': 18
+        'arm': 19
     },
     'motors_names': {
         'base': BASE_MOTOR_NAMES,

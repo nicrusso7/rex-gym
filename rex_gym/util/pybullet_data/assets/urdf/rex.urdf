@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <robot name="rex" xmlns:xacro="http://www.ros.org/wiki/xacro">
-  <material name="yellow">
+    <material name="yellow">
     <color rgba="0.92 0.83 0.0 1"/>
   </material>
   <material name="black">
@@ -32,32 +32,31 @@
     </inertial>
   </link>
 
-<!--  @TODO add lidar sensor-->
-  <!-- Lidar Backpack -->
-<!--  <link name="lidar_link">-->
-<!--    <visual>-->
-<!--      <geometry>-->
-<!--        <mesh filename="stl/rplidar_main.STL" scale="0.001 0.001 0.001"/>-->
-<!--      </geometry>-->
-<!--      <material name="black"/>-->
-<!--      <origin rpy="1.57075 0 0" xyz="-0.06425 0.02885 0"/>-->
-<!--    </visual>-->
-<!--    <collision>-->
-<!--      <geometry>-->
-<!--        <box size="0.0985 0.0577 0.07"/>-->
-<!--      </geometry>-->
-<!--      <origin rpy="0 0 0" xyz="0 0 0"/>-->
-<!--    </collision>-->
-<!--    <inertial>-->
-<!--      <mass value="0.50"/>-->
-<!--      <inertia ixx="100" ixy="0" ixz="0" iyy="100" iyz="0" izz="100"/>-->
-<!--    </inertial>-->
-<!--  </link>-->
-<!--  <joint name="base_lidar" type="fixed">-->
-<!--    <parent link="base_link"/>-->
-<!--    <child link="lidar_link"/>-->
-<!--    <origin xyz="0 0 0.035"/>-->
-<!--  </joint>-->
+ <!-- Lidar Backpack
+  <link name="lidar_link">
+   <visual>
+     <geometry>
+       <mesh filename="stl/rplidar_main.stl" scale="0.001 0.001 0.001"/>
+     </geometry>
+     <material name="black"/>
+     <origin rpy="1.57075 0 0" xyz="-0.06425 0.02885 0"/>
+   </visual>
+   <collision>
+     <geometry>
+       <box size="0.0985 0.0577 0.07"/>
+     </geometry>
+     <origin rpy="0 0 0" xyz="0 0 0"/>
+   </collision>
+   <inertial>
+     <mass value="0.1"/>
+     <inertia ixx="100" ixy="0" ixz="0" iyy="100" iyz="0" izz="100"/>
+   </inertial>
+  </link>
+  <joint name="base_lidar" type="fixed">
+   <parent link="base_link"/>
+   <child link="lidar_link"/>
+   <origin xyz="0 0 0.035"/>
+  </joint> -->
 
   <!-- create head & tail -->
   <link name="chassis_front_link">
@@ -88,7 +87,7 @@
       <geometry>
         <mesh filename="stl/backpart.stl" scale="0.001 0.001 0.001"/>
       </geometry>
-      <origin rpy="0 0 0" xyz="-0.040 -0.060 -0.0140"/>
+      <origin rpy="0 0 0" xyz="0.05 -0.005 -0.042"/>
       <material name="yellow"/>
     </visual>
     <collision>
@@ -107,7 +106,7 @@
     <child link="chassis_rear_link"/>
   </joint>
 
-  <!-- create Legs -->
+  <!-- Front Left Leg -->
   <link name="front_left_shoulder_link">
     <visual>
       <geometry>
@@ -130,9 +129,9 @@
   <link name="front_left_leg_link_cover">
     <visual>
       <geometry>
-        <mesh filename="stl/larm_cover.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="stl/upper_leg_shell_cover.stl" scale="0.001 0.001 0.001"/>
       </geometry>
-      <origin rpy="0 0 0" xyz="-0.125 0.04 -0.02"/>
+      <origin rpy="0 0 -1.5" xyz="0.002 0.0 -0.16"/>
       <material name="yellow"/>
     </visual>
     <inertial>
@@ -143,13 +142,13 @@
   <link name="front_left_leg_link">
     <visual>
       <geometry>
-        <mesh filename="stl/larm.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="stl/upper_leg_shell_base.stl" scale="0.001 0.001 0.001"/>
       </geometry>
-      <origin rpy="0 0 0" xyz="-0.125 0.04 -0.02"/>
+      <origin rpy="0 0 -1.5" xyz="0.002 0.0 -0.16"/>
       <material name="black"/>
     </visual>
     <collision>
-      <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 -0.050"/>
+      <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 -0.05"/>
       <geometry>
         <box size="0.028 0.036 0.12"/>
       </geometry>
@@ -162,9 +161,9 @@
   <link name="front_left_foot_link">
     <visual>
       <geometry>
-        <mesh filename="stl/lfoot.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="stl/lower_leg_solid.stl" scale="0.001 0.001 0.001"/>
       </geometry>
-      <origin rpy="0 0 0" xyz="-0.120 0.04 0.1"/>
+      <origin rpy="0 0 1.5" xyz="0.0 0.0 0.0"/>
       <material name="black"/>
     </visual>
     <collision>
@@ -183,14 +182,14 @@
       <geometry>
         <mesh filename="stl/foot.stl" scale="0.001 0.001 0.001"/>
       </geometry>
-      <origin rpy="0 -0.40010 0" xyz="0 -0.01 0"/>
+      <origin rpy="0 0 0" xyz="0.0 -0.01 -0.045"/>
       <material name="grey"/>
     </visual>
     <collision>
       <geometry>
         <mesh filename="stl/foot.stl" scale="0.001 0.001 0.001"/>
       </geometry>
-      <origin rpy="0 -0.40010 0" xyz="0 -0.01 0"/>
+      <origin rpy="0 0 0" xyz="0 -0.01 -0.045"/>
       <contact_coefficients mu="100.0"/>
     </collision>
     <inertial>
@@ -211,7 +210,7 @@
     <child link="front_left_leg_link"/>
     <axis xyz="0 1 0"/>
     <origin rpy="0 0 0" xyz="0 -0.052 0"/>
-    <limit effort="100.0" lower="-2.17" upper="0.97" velocity="0.5"/>
+    <limit effort="100.0" lower="-1.57" upper="1.57" velocity="0.5"/>
     <dynamics damping="0.0" friction="0.0"/>
   </joint>
   <joint name="front_left_leg_cover_joint" type="fixed">
@@ -223,8 +222,8 @@
     <parent link="front_left_leg_link"/>
     <child link="front_left_foot_link"/>
     <axis xyz="0 1 0"/>
-    <origin rpy="0 0 0" xyz="-0.01 0 -0.12"/>
-    <limit effort="100.0" lower="-0.1" upper="2.59" velocity="0.5"/>
+    <origin rpy="0 0 0" xyz="0.002 -0.02 -0.16"/>
+    <limit effort="100.0" lower="-3.14" upper="3.14" velocity="0.5"/>
     <dynamics damping="0.0" friction="0.5"/>
   </joint>
   <joint name="front_left_toe" type="fixed">
@@ -233,12 +232,13 @@
     <origin xyz="0 0 -0.115"/>
   </joint>
 
+  <!-- Front Right Leg -->
   <link name="front_right_shoulder_link">
     <visual>
       <geometry>
         <mesh filename="stl/rshoulder.stl" scale="0.001 0.001 0.001"/>
       </geometry>
-      <origin rpy="0 0 0" xyz="-0.135 -0.09 -0.01"/>
+      <origin rpy="0 0 0" xyz="-0.135 -0.102 -0.01"/>
       <material name="black"/>
     </visual>
     <collision>
@@ -255,9 +255,9 @@
   <link name="front_right_leg_link_cover">
     <visual>
       <geometry>
-        <mesh filename="stl/rarm_cover.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="stl/upper_leg_shell_cover.stl" scale="0.001 0.001 0.001"/>
       </geometry>
-      <origin rpy="0 0 0" xyz="-0.125 -0.15 -0.02"/>
+      <origin rpy="0 0 1.5" xyz="0.002 0.0 -0.16"/>
       <material name="yellow"/>
     </visual>
     <inertial>
@@ -268,9 +268,9 @@
   <link name="front_right_leg_link">
     <visual>
       <geometry>
-        <mesh filename="stl/rarm.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="stl/upper_leg_shell_base.stl" scale="0.001 0.001 0.001"/>
       </geometry>
-      <origin rpy="0 0 0" xyz="-0.125 -0.15 -0.02"/>
+      <origin rpy="0 0 1.5" xyz="0.002 0.0 -0.16"/>
       <material name="black"/>
     </visual>
     <collision>
@@ -287,9 +287,9 @@
   <link name="front_right_foot_link">
     <visual>
       <geometry>
-        <mesh filename="stl/rfoot.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="stl/lower_leg_solid.stl" scale="0.001 0.001 0.001"/>
       </geometry>
-      <origin rpy="0 0 0" xyz="-0.120 -0.15 0.1"/>
+      <origin rpy="0 0 -1.5" xyz="0 0 0"/>
       <material name="black"/>
     </visual>
     <collision>
@@ -308,14 +308,14 @@
       <geometry>
         <mesh filename="stl/foot.stl" scale="0.001 0.001 0.001"/>
       </geometry>
-      <origin rpy="0 -0.40010 0" xyz="0 -0.01 0"/>
+      <origin rpy="0 0 0" xyz="0.0 -0.01 -0.045"/>
       <material name="grey"/>
     </visual>
     <collision>
       <geometry>
         <mesh filename="stl/foot.stl" scale="0.001 0.001 0.001"/>
       </geometry>
-      <origin rpy="0 -0.40010 0" xyz="0 -0.01 0"/>
+      <origin rpy="0 0 0" xyz="0.0 -0.01 -0.045"/>
       <contact_coefficients mu="100.0"/>
     </collision>
     <inertial>
@@ -335,8 +335,8 @@
     <parent link="front_right_shoulder_link"/>
     <child link="front_right_leg_link"/>
     <axis xyz="0 1 0"/>
-    <origin rpy="0 0 0" xyz="0 0.052 0"/>
-    <limit effort="100.0" lower="-2.17" upper="0.97" velocity="0.5"/>
+    <origin rpy="0 0 0" xyz="0 0.042 0"/>
+    <limit effort="100.0" lower="-1.57" upper="1.57" velocity="0.5"/>
     <dynamics damping="0.0" friction="0.0"/>
   </joint>
   <joint name="front_right_leg_cover_joint" type="fixed">
@@ -348,8 +348,8 @@
     <parent link="front_right_leg_link"/>
     <child link="front_right_foot_link"/>
     <axis xyz="0 1 0"/>
-    <origin rpy="0 0 0" xyz="-0.01 0 -0.12"/>
-    <limit effort="100.0" lower="-0.1" upper="2.59" velocity="0.5"/>
+    <origin rpy="0 0 0" xyz="0.002 0.02 -0.16"/>
+    <limit effort="100.0" lower="-3.14" upper="3.14" velocity="0.5"/>
     <dynamics damping="0.0" friction="0.5"/>
   </joint>
   <joint name="front_right_toe" type="fixed">
@@ -358,6 +358,7 @@
     <origin xyz="0 0 -0.115"/>
   </joint>
 
+  <!-- Rear Left Leg -->
   <link name="rear_left_shoulder_link">
     <visual>
       <geometry>
@@ -380,9 +381,9 @@
   <link name="rear_left_leg_link_cover">
     <visual>
       <geometry>
-        <mesh filename="stl/larm_cover.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="stl/upper_leg_shell_cover.stl" scale="0.001 0.001 0.001"/>
       </geometry>
-      <origin rpy="0 0 0" xyz="-0.125 0.04 -0.02"/>
+      <origin rpy="0 0 -1.5" xyz="0.002 0.0 -0.16"/>
       <material name="yellow"/>
     </visual>
     <inertial>
@@ -393,9 +394,9 @@
   <link name="rear_left_leg_link">
     <visual>
       <geometry>
-        <mesh filename="stl/larm.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="stl/upper_leg_shell_base.stl" scale="0.001 0.001 0.001"/>
       </geometry>
-      <origin rpy="0 0 0" xyz="-0.125 0.04 -0.02"/>
+      <origin rpy="0 0 -1.5" xyz="0.002 0.0 -0.16"/>
       <material name="black"/>
     </visual>
     <collision>
@@ -412,16 +413,16 @@
   <link name="rear_left_foot_link">
     <visual>
       <geometry>
-        <mesh filename="stl/lfoot.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="stl/lower_leg_solid.stl" scale="0.001 0.001 0.001"/>
       </geometry>
-      <origin rpy="0 0 0" xyz="-0.120 0.04 0.1"/>
+      <origin rpy="0 0 1.5" xyz="0 0 0"/>
       <material name="black"/>
     </visual>
     <collision>
       <geometry>
         <box size="0.026 0.020 0.115"/>
       </geometry>
-      <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 -0.050"/>
+      <origin rpy="0 0 0" xyz="0.0 0.0 -0.050"/>
     </collision>
     <inertial>
       <mass value="0.1"/>
@@ -433,14 +434,14 @@
       <geometry>
         <mesh filename="stl/foot.stl" scale="0.001 0.001 0.001"/>
       </geometry>
-      <origin rpy="0 -0.40010 0" xyz="0 -0.01 0"/>
+      <origin rpy="0 0 0" xyz="0 -0.01 -0.045"/>
       <material name="grey"/>
     </visual>
     <collision>
       <geometry>
         <mesh filename="stl/foot.stl" scale="0.001 0.001 0.001"/>
       </geometry>
-      <origin rpy="0 -0.40010 0" xyz="0 -0.01 0"/>
+      <origin rpy="0 0 0" xyz="0 -0.01 -0.045"/>
       <contact_coefficients mu="100.0"/>
     </collision>
     <inertial>
@@ -461,7 +462,7 @@
     <child link="rear_left_leg_link"/>
     <axis xyz="0 1 0"/>
     <origin rpy="0 0 0" xyz="0 -0.052 0"/>
-    <limit effort="100.0" lower="-2.17" upper="0.97" velocity="0.5"/>
+    <limit effort="100.0" lower="-1.57" upper="1.57" velocity="0.5"/>
     <dynamics damping="0.0" friction="0.0"/>
   </joint>
   <joint name="rear_left_leg_cover_joint" type="fixed">
@@ -473,8 +474,8 @@
     <parent link="rear_left_leg_link"/>
     <child link="rear_left_foot_link"/>
     <axis xyz="0 1 0"/>
-    <origin rpy="0 0 0" xyz="-0.01 0 -0.12"/>
-    <limit effort="100.0" lower="-0.1" upper="2.59" velocity="0.5"/>
+    <origin rpy="0 0 0" xyz="0.002 -0.02 -0.16"/>
+    <limit effort="100.0" lower="-3.14" upper="3.14" velocity="0.5"/>
     <dynamics damping="0.0" friction="0.5"/>
   </joint>
   <joint name="rear_left_toe" type="fixed">
@@ -483,12 +484,13 @@
     <origin xyz="0 0 -0.115"/>
   </joint>
 
+  <!-- Rear Right Leg -->
   <link name="rear_right_shoulder_link">
     <visual>
       <geometry>
         <mesh filename="stl/rshoulder.stl" scale="0.001 0.001 0.001"/>
       </geometry>
-      <origin rpy="0 0 0" xyz="-0.135 -0.09 -0.01"/>
+      <origin rpy="0 0 0" xyz="-0.135 -0.102 -0.01"/>
       <material name="black"/>
     </visual>
     <collision>
@@ -505,9 +507,9 @@
   <link name="rear_right_leg_link_cover">
     <visual>
       <geometry>
-        <mesh filename="stl/rarm_cover.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="stl/upper_leg_shell_cover.stl" scale="0.001 0.001 0.001"/>
       </geometry>
-      <origin rpy="0 0 0" xyz="-0.125 -0.15 -0.02"/>
+      <origin rpy="0 0 1.5" xyz="0.002 0.0 -0.16"/>
       <material name="yellow"/>
     </visual>
     <inertial>
@@ -518,9 +520,9 @@
   <link name="rear_right_leg_link">
     <visual>
       <geometry>
-        <mesh filename="stl/rarm.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="stl/upper_leg_shell_base.stl" scale="0.001 0.001 0.001"/>
       </geometry>
-      <origin rpy="0 0 0" xyz="-0.125 -0.15 -0.02"/>
+      <origin rpy="0 0 1.5" xyz="0.002 0.0 -0.16"/>
       <material name="black"/>
     </visual>
     <collision>
@@ -537,9 +539,9 @@
   <link name="rear_right_foot_link">
     <visual>
       <geometry>
-        <mesh filename="stl/rfoot.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="stl/lower_leg_solid.stl" scale="0.001 0.001 0.001"/>
       </geometry>
-      <origin rpy="0 0 0" xyz="-0.120 -0.15 0.1"/>
+      <origin rpy="0 0 -1.5" xyz="0 0 0"/>
       <material name="black"/>
     </visual>
     <collision>
@@ -558,14 +560,14 @@
       <geometry>
         <mesh filename="stl/foot.stl" scale="0.001 0.001 0.001"/>
       </geometry>
-      <origin rpy="0 -0.40010 0" xyz="0 -0.01 0"/>
+      <origin rpy="0 0 0" xyz="0.0 -0.01 -0.045"/>
       <material name="grey"/>
     </visual>
     <collision>
       <geometry>
         <mesh filename="stl/foot.stl" scale="0.001 0.001 0.001"/>
       </geometry>
-      <origin rpy="0 -0.40010 0" xyz="0 -0.01 0"/>
+      <origin rpy="0 0 0" xyz="0.0 -0.01 -0.045"/>
       <contact_coefficients mu="100.0"/>
     </collision>
     <inertial>
@@ -585,8 +587,8 @@
     <parent link="rear_right_shoulder_link"/>
     <child link="rear_right_leg_link"/>
     <axis xyz="0 1 0"/>
-    <origin rpy="0 0 0" xyz="0 0.052 0"/>
-    <limit effort="100.0" lower="-2.17" upper="0.97" velocity="0.5"/>
+    <origin rpy="0 0 0" xyz="0 0.042 0"/>
+    <limit effort="100.0" lower="-1.57" upper="1.57" velocity="0.5"/>
     <dynamics damping="0.0" friction="0.0"/>
   </joint>
   <joint name="rear_right_leg_cover_joint" type="fixed">
@@ -598,8 +600,8 @@
     <parent link="rear_right_leg_link"/>
     <child link="rear_right_foot_link"/>
     <axis xyz="0 1 0"/>
-    <origin rpy="0 0 0" xyz="-0.01 0 -0.12"/>
-    <limit effort="100.0" lower="-0.1" upper="2.59" velocity="0.5"/>
+    <origin rpy="0 0 0" xyz="0.002 0.02 -0.16"/>
+    <limit effort="100.0" lower="-3.14" upper="3.14" velocity="0.5"/>
     <dynamics damping="0.0" friction="0.5"/>
   </joint>
   <joint name="rear_right_toe" type="fixed">

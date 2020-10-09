@@ -52,6 +52,6 @@ register(
 register(
     id='RexPoses-v0',
     entry_point='rex_gym.envs.gym.poses_env:RexPosesEnv',
-    max_episode_steps=2400,
+    max_episode_steps=400,
     reward_threshold=5.0,
 )
