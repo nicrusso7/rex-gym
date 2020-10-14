@@ -226,10 +226,11 @@
     <limit effort="100.0" lower="-3.14" upper="3.14" velocity="0.5"/>
     <dynamics damping="0.0" friction="0.5"/>
   </joint>
-  <joint name="front_left_toe" type="fixed">
+  <joint name="toe_joint_front_left" type="fixed">
     <parent link="front_left_foot_link"/>
     <child link="front_left_toe_link"/>
     <origin xyz="0 0 -0.115"/>
+    <dynamics damping="0.0" friction="0.0"/>
   </joint>
 
   <!-- Front Right Leg -->
@@ -352,10 +353,11 @@
     <limit effort="100.0" lower="-3.14" upper="3.14" velocity="0.5"/>
     <dynamics damping="0.0" friction="0.5"/>
   </joint>
-  <joint name="front_right_toe" type="fixed">
+  <joint name="toe_joint_front_right" type="fixed">
     <parent link="front_right_foot_link"/>
     <child link="front_right_toe_link"/>
     <origin xyz="0 0 -0.115"/>
+    <dynamics damping="0.0" friction="0.0"/>
   </joint>
 
   <!-- Rear Left Leg -->
@@ -478,10 +480,11 @@
     <limit effort="100.0" lower="-3.14" upper="3.14" velocity="0.5"/>
     <dynamics damping="0.0" friction="0.5"/>
   </joint>
-  <joint name="rear_left_toe" type="fixed">
+  <joint name="toe_joint_rear_left" type="fixed">
     <parent link="rear_left_foot_link"/>
     <child link="rear_left_toe_link"/>
     <origin xyz="0 0 -0.115"/>
+    <dynamics damping="0.0" friction="0.0"/>
   </joint>
 
   <!-- Rear Right Leg -->
@@ -604,10 +607,11 @@
     <limit effort="100.0" lower="-3.14" upper="3.14" velocity="0.5"/>
     <dynamics damping="0.0" friction="0.5"/>
   </joint>
-  <joint name="rear_right_toe" type="fixed">
+  <joint name="toe_joint_rear_right" type="fixed">
     <parent link="rear_right_foot_link"/>
     <child link="rear_right_toe_link"/>
     <origin xyz="0 0 -0.115"/>
+    <dynamics damping="0.0" friction="0.0"/>
   </joint>
 
   <!-- Arm -->

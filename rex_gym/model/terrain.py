@@ -13,7 +13,7 @@ FLAG_TO_FILENAME = {
 
 ROBOT_INIT_POSITION = {
     'mounts': [0, 0, .905],
-    'plane': [0, 0, 0.265],
+    'plane': [0, 0, 0.275],
     'hills': [0, 0, 2.035],
     'maze': [0, 0, 0.265],
     'random': [0, 0, 0.265]

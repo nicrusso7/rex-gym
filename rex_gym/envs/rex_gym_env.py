@@ -354,6 +354,7 @@ class RexGymEnv(gym.Env):
         self._pybullet_client.resetDebugVisualizerCamera(self._cam_dist, self._cam_yaw,
                                                          self._cam_pitch, [0, 0, 0])
         self._pybullet_client.configureDebugVisualizer(self._pybullet_client.COV_ENABLE_RENDERING, 1)
+        # time.sleep(100)
         return self._get_observation()
 
     def seed(self, seed=None):
