@@ -267,7 +267,7 @@ class RexGymEnv(gym.Env):
         }
         self.seed()
         self._backwards = backwards
-        self._terrain_type = "plane"
+        self._terrain_type = terrain_type
         self._terrain_id = terrain_id
         self.reset()
         self._terrain_type = terrain_type
