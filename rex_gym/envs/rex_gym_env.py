@@ -482,10 +482,11 @@ class RexGymEnv(gym.Env):
         Returns:
           Boolean value that indicates whether rex has fallen.
         """
+        height = self.rex.GetBasePosition()[2]
         orientation = self.rex.GetBaseOrientation()
         rot_mat = self._pybullet_client.getMatrixFromQuaternion(orientation)
         local_up = rot_mat[6:]
-        return np.dot(np.asarray([0, 0, 1]), np.asarray(local_up)) < 0.85
+        return np.dot(np.asarray([0, 0, 1]), np.asarray(local_up)) < 0.85 and height < 0.13
 
     def _termination(self):
         if self.is_fallen():
