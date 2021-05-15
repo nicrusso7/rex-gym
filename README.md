@@ -9,9 +9,9 @@ successfully transfer the knowledge (`Control Policies`) on the real robot witho
 This project is mostly inspired by the incredible works done by Boston Dynamics.
 
 ## Related repositories
-[rexctl](https://github.com/nicrusso7/rexctl) - A CLI application to bootstrap and control Rex running the trained `Control Policies`.
+[rexctl](https://github.com/nicrusso7/rexctl) - A CLI application to bootstrap and control Rex robot running the trained `Control Policies`.
 
-[rex-cloud](https://github.com/nicrusso7/rex-cloud) - A CLI application to train Rex on the cloud.
+[rex-models](https://github.com/nicrusso7/rex-models) - A web URDF visualizer. Collection of Rex robot models. 
 
 # Rex-gym: OpenAI Gym environments and tools
 This repository contains a collection of `OpenAI Gym Environments` used to train Rex, the Rex URDF model, 
