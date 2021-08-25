@@ -1,7 +1,7 @@
 numpy==1.17.3
 pybullet==2.8.3
 gym==0.17.1
-tensorflow==1.15.5
+tensorflow==2.5.1
 ruamel.yaml
 click
 tensorflow-probability==0.8
