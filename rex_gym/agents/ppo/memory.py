@@ -71,10 +71,10 @@ class EpisodeMemory(object):
                                                          self._max_length,
                                                          message='max length exceeded')
         append_ops = []
+        timestep = tf.gather(self._length, rows)
+        indices = tf.stack([rows, timestep], 1)
         with tf.control_dependencies([assert_max_length]):
             for buffer_, elements in zip(self._buffers, transitions):
-                timestep = tf.gather(self._length, rows)
-                indices = tf.stack([rows, timestep], 1)
                 append_ops.append(tf.compat.v1.scatter_nd_update(buffer_, indices, elements))
         with tf.control_dependencies(append_ops):
             episode_mask = tf.reduce_sum(tf.one_hot(rows, self._capacity, dtype=tf.int32), 0)
